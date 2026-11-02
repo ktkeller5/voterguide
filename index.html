@@ -792,7 +792,7 @@ const store = {
   get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 };
-let names = store.get("sfb-names",["Me","My fiancé"]);
+let names = store.get("sfb-names",["insert name","insert name"]);
 let picks = store.get("sfb-picks",{}); // {itemId:[pick0,pick1]}
 let lens = null;
 const LENS_LABEL = {taxes:"Taxes",safety:"Public safety",downtown:"Downtown recovery",transit:"Transit",home:"Homeowners"};
