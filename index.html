@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SF Ballot Explainer, Nov 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a ballot-booth workbench. Left rail = the ballot in order; right = one contest at a time, arguments side by side, endorsements as a scannable strip. */
+:root{
+  --paper:#F4F6F5;
+  --surface:#FFFFFF;
+  --ink:#15202B;
+  --muted:#596572;
+  --line:#D6DCE0;
+  --accent:#1D5B86;
+  --accent-soft:#E3EEF6;
+  --yes:#2B7A4B; --yes-soft:#E2F2E8;
+  --no:#A93838; --no-soft:#F8E4E4;
+  --neutral:#8A6A12; --neutral-soft:#F6EED6;
+  --font-display:"Archivo Narrow","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --font-body:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0E151D; --surface:#16202B; --ink:#E5EAEE; --muted:#9AA6B2; --line:#2A3846;
+    --accent:#76AEDB; --accent-soft:#1B2E40;
+    --yes:#6CC596; --yes-soft:#16301F; --no:#F08B8B; --no-soft:#3A1C1C; --neutral:#E0BE62; --neutral-soft:#33290F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0E151D; --surface:#16202B; --ink:#E5EAEE; --muted:#9AA6B2; --line:#2A3846;
+  --accent:#76AEDB; --accent-soft:#1B2E40;
+  --yes:#6CC596; --yes-soft:#16301F; --no:#F08B8B; --no-soft:#3A1C1C; --neutral:#E0BE62; --neutral-soft:#33290F;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.55}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;line-height:1.15;margin:0}
+.topbar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.topbar-inner{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:12px 20px;max-width:1360px;margin:0 auto}
+.brand{display:flex;flex-direction:column}
+.brand h1{font-size:1.35rem;font-weight:700;letter-spacing:.01em}
+.brand span{font-size:.82rem;color:var(--muted)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.tabs a{font-size:.88rem;font-weight:600;text-decoration:none;color:var(--ink);padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--paper)}
+.tabs a.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.lensbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 20px 12px;max-width:1360px;margin:0 auto}
+.lensbar .lbl{font-size:.8rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.chip{font:inherit;font-size:.82rem;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.wrap{display:grid;grid-template-columns:300px minmax(0,1fr);gap:0;max-width:1360px;margin:0 auto}
+nav.rail{border-right:1px solid var(--line);padding:16px 12px 40px;position:sticky;top:112px;align-self:start;max-height:calc(100vh - 112px);overflow-y:auto}
+.rail h4{font-family:var(--font-display);font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:18px 8px 6px}
+.rail h4:first-child{margin-top:0}
+.rail a{display:flex;gap:10px;align-items:baseline;padding:6px 8px;border-radius:6px;text-decoration:none;color:var(--ink);font-size:.9rem}
+.rail a:hover{background:var(--accent-soft)}
+.rail a.on{background:var(--accent-soft);font-weight:600}
+.rail a .code{font-family:var(--font-display);font-weight:700;min-width:2.4em;color:var(--accent)}
+.rail a .pick{margin-left:auto;font-size:.7rem;font-weight:700;padding:1px 6px;border-radius:4px}
+.rail a.dim{opacity:.35}
+main{padding:24px 28px 80px;min-width:0}
+.mobile-nav{display:none;padding:12px 16px 0}
+.mobile-nav select{width:100%;font:inherit;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.kicker{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.item-head{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start;justify-content:space-between;margin-bottom:6px}
+.item-head h2{font-size:2.1rem;font-weight:700}
+.item-head .badge{font-family:var(--font-display);font-size:2.6rem;font-weight:700;color:var(--accent);line-height:1}
+.short{font-size:1.1rem;max-width:68ch;margin:8px 0 14px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.meta span{font-size:.8rem;padding:3px 9px;border-radius:4px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.section{margin:22px 0}
+.section > h3{font-size:1.15rem;margin-bottom:10px}
+ul.clean{margin:0;padding-left:1.1em}
+ul.clean li{margin:4px 0;max-width:70ch}
+.yn{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.yn div{padding:12px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface)}
+.yn b{display:block;font-family:var(--font-display);font-size:1rem;margin-bottom:2px}
+.pro{border-top:4px solid var(--yes)}
+.con{border-top:4px solid var(--no)}
+.pro h3{color:var(--yes)} .con h3{color:var(--no)}
+.lens{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:14px 18px}
+.lens dl{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:6px 14px}
+.lens dt{font-weight:700;font-size:.85rem}
+.lens dd{margin:0;font-size:.93rem}
+.endorse{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.org{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface);display:flex;flex-direction:column;gap:4px}
+.org .n{font-size:.82rem;font-weight:600}
+.org .l{font-size:.72rem;color:var(--muted)}
+.pos{font-family:var(--font-display);font-weight:700;font-size:.95rem;padding:1px 8px;border-radius:4px;align-self:flex-start}
+.pos.Y{background:var(--yes-soft);color:var(--yes)}
+.pos.N{background:var(--no-soft);color:var(--no)}
+.pos.O{background:var(--neutral-soft);color:var(--neutral)}
+.pos.U{background:var(--paper);color:var(--muted);font-weight:500}
+.who{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:.92rem}
+.who p{margin:4px 0 0}
+.sources{font-size:.85rem}
+.sources a{word-break:break-word}
+.ours{display:flex;flex-wrap:wrap;gap:14px 28px;align-items:center}
+.ours .person{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ours .person b{font-size:.9rem;min-width:6em}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:.85rem;padding:5px 12px;border:0;background:var(--surface);color:var(--ink);cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"].Y{background:var(--yes);color:var(--surface)}
+.seg button[aria-pressed="true"].N{background:var(--no);color:var(--surface)}
+.seg button[aria-pressed="true"].O{background:var(--neutral);color:var(--surface)}
+.ours select{font:inherit;font-size:.88rem;padding:5px 8px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.cands{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.cand h3{font-size:1.4rem}
+.cand .role{color:var(--muted);font-size:.9rem;margin:2px 0 10px}
+.cand h4{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;margin:12px 0 4px}
+.cand h4.f{color:var(--yes)} .cand h4.a{color:var(--no)}
+.endorsers{font-size:.86rem;color:var(--muted);margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+table.matrix{border-collapse:collapse;font-size:.85rem;min-width:760px;width:100%}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table.matrix th,table.matrix td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.matrix th{font-family:var(--font-display);font-size:.85rem;position:sticky;top:0;background:var(--surface)}
+table.matrix td.c{text-align:center}
+table.matrix tr.grp td{background:var(--paper);font-weight:700;font-family:var(--font-display);text-transform:uppercase;letter-spacing:.06em;font-size:.78rem}
+table.matrix a{text-decoration:none;font-weight:600}
+.prose{max-width:72ch}
+.prose p{margin:0 0 12px}
+.note{font-size:.88rem;color:var(--muted)}
+.btn{font:inherit;font-size:.88rem;font-weight:600;padding:7px 14px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--surface);cursor:pointer}
+.btn.ghost{background:var(--surface);color:var(--accent)}
+.disagree td{background:var(--neutral-soft)}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:34px}
+.pager a{text-decoration:none;font-weight:600;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.names{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.names input{font:inherit;padding:6px 8px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);width:11em}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin-right:4px}
+@media (max-width: 900px){
+  .wrap{grid-template-columns:1fr}
+  nav.rail{display:none}
+  .mobile-nav{display:block}
+  main{padding:18px 16px 60px}
+  .grid2,.yn,.who{grid-template-columns:1fr}
+  .item-head h2{font-size:1.7rem}
+  .tabs{margin-left:0}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <h1>San Francisco Ballot Explainer</h1>
+      <span>General election · Tuesday, November 3, 2026 · Arguments for and against, from sources across the spectrum</span>
+    </div>
+    <div class="tabs" role="navigation" aria-label="Views">
+      <a href="#overview" id="tab-overview">Start here</a>
+      <a href="#matrix" id="tab-matrix">Endorsement grid</a>
+      <a href="#our-ballot" id="tab-our-ballot">Our ballot</a>
+    </div>
+  </div>
+  <div class="lensbar" role="group" aria-label="Filter by priority">
+    <span class="lbl">Show what touches</span>
+    <button class="chip" data-lens="taxes" aria-pressed="false">Taxes</button>
+    <button class="chip" data-lens="safety" aria-pressed="false">Public safety</button>
+    <button class="chip" data-lens="downtown" aria-pressed="false">Downtown recovery</button>
+    <button class="chip" data-lens="transit" aria-pressed="false">Transit</button>
+    <button class="chip" data-lens="home" aria-pressed="false">Homeowners</button>
+  </div>
+</header>
+<div class="mobile-nav"><label for="jump" class="kicker">Jump to</label><select id="jump"></select></div>
+<div class="wrap">
+  <nav class="rail" id="rail" aria-label="Ballot contents"></nav>
+  <main id="main" tabindex="-1"></main>
+</div>
+
+<script>
+/* ---------- Organizations whose endorsements are shown ---------- */
+const ORGS = {
+  growsf:{n:"GrowSF", l:"Moderate, pro-growth PAC"},
+  chron:{n:"SF Chronicle", l:"Editorial board"},
+  spur:{n:"SPUR", l:"Urban-policy think tank"},
+  sfdem:{n:"SF Democratic Party", l:"Local party committee"},
+  edlee:{n:"Ed Lee Dem Club", l:"Moderate Asian Pacific Dem club"},
+  league:{n:"League of Pissed Off Voters", l:"Progressive voter guide"},
+  sfgop:{n:"SF Republican Party", l:"Local party committee"}
+};
+const POS = {Y:"Yes", N:"No", O:"No position", U:"Not found"};
+
+/* ---------- Ballot data ---------- */
+const S = { // shared source links
+  lwv:["League of Women Voters SF – Pros & Cons", "https://lwvsf.org/procon"],
+  lwvca:["LWV California Easy Voter Guide (PDF)", "https://cavotes.org/wp-content/uploads/sites/3/2026/08/EVG-Nov26-Eng.pdf"],
+  growsf:["GrowSF Nov 2026 voter guide", "https://growsf.org/voter-guide/san-francisco-voter-guide-november-2026-election/"],
+  spur:["SPUR Nov 2026 voter guide", "https://www.spur.org/voter-guide/2026-11"],
+  league:["Pissed Off Voter Guide", "https://www.theleaguesf.org/"],
+  edlee:["Ed Lee Dem Club endorsements", "https://www.edleedems.org/?p=4150"],
+  chronList:["SF Chronicle endorsements (via Blue Voter Guide)", "https://bluevoterguide.org/endorser-org/San_Francisco_Chronicle/CA/1333"],
+  certList:["CA Secretary of State certified candidate list (PDF)", "https://elections.cdn.sos.ca.gov/statewide-elections/2026-general/cert-list-candidates.pdf"],
+  sfCands:["SF Dept. of Elections candidate list", "https://www.sf.gov/candidates-november-3-2026-general-election"]
+};
+
+const ITEMS = [
+/* ===== San Francisco measures ===== */
+{id:"prop-a", group:"San Francisco measures", code:"A", kind:"measure",
+ title:"Charter changes to departments and commissions",
+ short:"Trims and reorganizes the city's boards and commissions and moves many of their rules out of the voter-controlled Charter into ordinary law.",
+ meta:["Charter amendment","Placed by 9 supervisors","Majority vote"],
+ what:["Cuts the number of commissions from about 55 to 38 (GrowSF's count) and moves many from the Charter, which only voters can change, into the Municipal Code, which supervisors can change.",
+       "Makes many commissioner qualifications optional and drops the general requirement that every commission publish an annual report.",
+       "Expands the City Administrator's real-estate role, lets supervisors approve legal settlements by resolution, and widens Public Utilities Commission authority.",
+       "GrowSF estimates savings of roughly $365,000–$450,000 a year."],
+ yes:"Make these Charter changes to commissions and department operations.",
+ no:"Keep the current Charter structure.",
+ pros:["Housekeeping: removes duplicate reports and inactive commissions that add cost without oversight value.","Small administrative fixes belong in legislation, not on the ballot.","Fewer bodies means clearer lines of accountability."],
+ cons:["Fewer commissions means fewer places for the public to weigh in.","Making qualifications optional could invite political patronage appointments.","Letting supervisors alter the Our City Our Home oversight committee could weaken oversight of homelessness spending."],
+ endorse:{growsf:"Y",chron:"Y",spur:"Y",sfdem:"U",edlee:"Y",league:"N",sfgop:"U"},
+ supporters:"Mayor Daniel Lurie", opponents:"Coalition on Homelessness",
+ lens:{downtown:"Part of the broader push to streamline City Hall, which business groups tie to recovery.",taxes:"Small administrative savings (under $0.5M a year); no tax change."},
+ sources:[S.lwv,S.growsf,S.spur,S.league]},
+
+{id:"prop-b", group:"San Francisco measures", code:"B", kind:"measure",
+ title:"Municipal finance corporation and public bank",
+ short:"Lets the city create a city-owned lender, which could later become a public bank.",
+ meta:["Charter amendment","Placed by 9 supervisors","Majority vote"],
+ what:["Allows a municipal finance corporation that can lend and invest (but not take deposits) once the city has the resources to capitalize it.",
+       "It could finance already-approved climate and affordable/social housing projects.",
+       "After 3–5 years of profitable operation and regulatory approval it could become a full public bank, monitored by an oversight commission.",
+       "The measure itself does not appropriate money; opponents and GrowSF cite startup cost estimates of roughly $300M–$460M."],
+ yes:"Allow the city to set up a finance corporation and, later, a public bank.",
+ no:"Do not authorize a city-owned lender or bank.",
+ pros:["Opens a new, cheaper source of financing for housing and climate projects that are approved but unfunded.","Run by professionals under public oversight rather than politicians.","Could offer affordable small-business loans as an alternative to predatory lending."],
+ cons:["Startup cost of $300M+ during a period of budget shortfalls.","Risk of high-risk lending, with losses landing on taxpayers.","Faces FDIC and state regulatory hurdles; existing programs already support small business, housing and climate goals."],
+ endorse:{growsf:"N",chron:"N",spur:"N",sfdem:"U",edlee:"N",league:"Y",sfgop:"U"},
+ supporters:"SF Public Bank Coalition, SF Labor Council, SF Climate Emergency Coalition, Affordable Housing Alliance, SF Tenants Union", opponents:"Individual ballot-argument signers; GrowSF, SPUR, Chronicle",
+ lens:{taxes:"No tax itself, but capitalizing a bank would draw on city money; cost estimates range $300M–$460M."},
+ sources:[S.lwv,S.growsf,S.spur,S.league]},
+
+{id:"prop-c", group:"San Francisco measures", code:"C", kind:"measure",
+ title:"Contributions to the Housing Trust Fund",
+ short:"Raises the city's required annual deposit into its affordable-housing fund toward $125 million and extends the fund to 2058.",
+ meta:["Charter amendment","Placed 11–0 by supervisors","Majority vote"],
+ what:["Grows the General Fund contribution from $52M this year toward a $125M annual target; it can be paused or lowered during deficits, and growth is capped at 3% a year after hitting $125M.",
+       "Raises the income limit for city down-payment loans from 120% to 200% of Area Median Income, and lets supervisors change that limit without a vote.",
+       "Allows spending on social housing, co-ops and housing infrastructure; extends the fund from 2043 to 2058.",
+       "Controller: adds about $6M a year starting FY 2028-29, rising to about $125M a year by FY 2034-35 (versus about $65M under today's formula). It does not comply with the city's non-binding policy against new spending set-asides.",
+       "Context (GrowSF): it is the second half of a May 2026 deal between the mayor, Supervisor Melgar and housing nonprofits; the first half cut the inclusionary-housing requirement on new buildings from 15% to 5%."],
+ yes:"Increase the city's annual housing-fund contribution and broaden eligible programs.",
+ no:"Keep the current contribution formula and 2043 end date.",
+ pros:["Helps families, first responders and teachers stay in the city, without raising taxes.","Completes a negotiated deal that lowered the inclusionary 'tax' on new construction; supporters say rejecting C could reopen that fight.","Has safeguards: contributions can be frozen in bad budget years and growth is capped."],
+ cons:["Locks more General Fund money into a set-aside; existing mandates already total about $2B, roughly 30% of General Fund sources.","Supervisors could raise the income limit again without asking voters.","New eligible uses compete for the same dollars."],
+ endorse:{growsf:"Y",chron:"Y",spur:"Y",sfdem:"Y",edlee:"Y",league:"Y",sfgop:"N"},
+ supporters:"Non-Profit Housing Assn. of N. California, YIMBY Action, Council of Community Housing Organizations, SF Democratic Party", opponents:"SF Republican Party",
+ lens:{taxes:"No new tax, but commits more existing General Fund money, which then can't go to other services.",home:"Down-payment loans would reach households up to 200% of Area Median Income.",downtown:"Tied to the deal that cut inclusionary requirements on new buildings, which developers say helps projects pencil."},
+ sources:[S.lwv,S.growsf,S.spur,S.league]},
+
+{id:"prop-d", group:"San Francisco measures", code:"D", kind:"measure",
+ title:"Changes to the ballot-measure process",
+ short:"Makes it harder to put ordinances on the ballot: raises citizen signature thresholds and ends the mayor's and four supervisors' ability to do it alone.",
+ meta:["Charter amendment","Citizen initiative (proponent: Mayor Lurie)","Majority vote"],
+ what:["Ends the ability of the mayor alone, or any four supervisors, to place ordinances and policy declarations on the ballot (six supervisors would be needed).",
+       "Raises signatures for citizen ordinance initiatives from 2% to 8% of registered voters (about 10,600 → 42,400); special-election initiatives rise to 10% (about 39,000 → 53,000).",
+       "Lets proponents withdraw a qualified initiative up to 102 days before an election, which opens room for negotiated deals.",
+       "Does not change the signature threshold for Charter amendments (per the Chronicle). For scale: this year's Prop H qualified with 18,469 signatures."],
+ yes:"Raise signature thresholds and remove the mayor's and four supervisors' ballot-placement power.",
+ no:"Keep the current rules.",
+ pros:["San Francisco is unusual: 2% of voters, a minority of supervisors, or the mayor alone can add measures. Oakland and San Diego use 10%.","Shorter, clearer ballots; fewer special elections, each costing at least $5M.","Withdrawal option replaces today's 'game of chicken' with negotiation (Chronicle)."],
+ cons:["Removes a 125-year-old right and reduces direct democracy.","Prices out neighborhood groups, unions and advocates, so mainly well-funded interests can qualify measures.","Part of a package that opponents see as concentrating power in the mayor's office."],
+ endorse:{growsf:"Y",chron:"Y",spur:"Y",sfdem:"Y",edlee:"Y",league:"N",sfgop:"U"},
+ supporters:"SF Democratic Party, Teamsters 665, Council of District Merchants Assns.", opponents:"SF Labor Council, United Educators of SF, SF Tenants Union, Indivisible SF, SF Green Party",
+ lens:{taxes:"Applies to all citizen ordinances, including citizen-led tax measures such as this year's Prop H; future ones would need about 4x the signatures."},
+ sources:[S.lwv,["SF Chronicle: Prop D endorsement","https://www.sfchronicle.com/opinion/editorials/article/prop-d-san-francisco-ballot-22438203.php"],S.growsf,S.spur,S.league]},
+
+{id:"prop-e", group:"San Francisco measures", code:"E", kind:"measure",
+ title:"City Administrator authority and contracting",
+ short:"Gives the City Administrator control over citywide purchasing rules and raises the dollar limits under which contracts skip Board of Supervisors approval.",
+ meta:["Charter amendment","Citizen initiative (proponent: Mayor Lurie)","Majority vote"],
+ what:["City Administrator gets sole authority to propose most contracting and purchasing ordinances; they take effect unless the Board or mayor rejects them within 60 days.",
+       "Administrator can override conflicting department purchasing rules and set citywide technology policy, including at currently exempt agencies (SFMTA, PUC, Airport, Port).",
+       "Raises the thresholds for skipping Board approval: spending contracts from $10M to $25M; revenue contracts and leases from $1M to $4.5M.",
+       "Doubles the Administrator's term from 5 to 10 years, including the current term."],
+ yes:"Expand the Administrator's contracting powers, raise approval thresholds, and lengthen the term.",
+ no:"Keep current contracting rules.",
+ pros:["The Chronicle notes a single procurement process can cost as much as the contract itself; this targets that waste.","Sets transparent, uniform standards meant to curb corruption.","Adds accountability through one responsible official."],
+ cons:["Treats checks and balances as obstacles; less Board review of large contracts.","The same fixes could be done through ordinary legislation.","Part of the mayor's push for lasting executive power that will outlast this administration."],
+ endorse:{growsf:"Y",chron:"Y",spur:"Y",sfdem:"Y",edlee:"Y",league:"N",sfgop:"U"},
+ supporters:"SF Democratic Party, Firefighters Local 798, SF Building Trades, Teamsters 665, merchant associations", opponents:"League of Pissed Off Voters, SF Green Party",
+ lens:{downtown:"Faster, simpler city purchasing is a core plank of the 'fix City Hall' agenda business groups support.",taxes:"Aims to cut procurement overhead; no tax change."},
+ sources:[S.lwv,["SF Chronicle editorials","https://www.sfchronicle.com/opinion/editorials/"],S.growsf,S.spur,S.league]},
+
+{id:"prop-f", group:"San Francisco measures", code:"F", kind:"measure",
+ title:"Executive branch management",
+ short:"Gives the mayor more power to hire and fire department heads and commissioners, reorganize departments, and appoint deputy mayors.",
+ meta:["Charter amendment","Citizen initiative (proponent: Mayor Lurie)","Majority vote"],
+ what:["Most commissioners become removable at will by whoever appointed them.",
+       "The mayor can fire most department heads without commission approval; the Police Commission loses its power to remove the Police Chief.",
+       "Candidate lists for department-head jobs shrink from three names to one, and the mayor can hire some heads directly.",
+       "Repeals the 1991 voter-approved ban on deputy mayors and lets the mayor merge or reorganize departments by notifying supervisors (who can object), without a public vote."],
+ yes:"Give the mayor more control over commissioners, department heads, structure and deputy mayors.",
+ no:"Keep the current split of authority between the mayor and commissions.",
+ pros:["Clear accountability: the mayor owns results. Lurie's line: 'When everybody is in charge, no one is accountable.'","Former Controller Ben Rosenfield says these organizational powers are standard in many cities.","Commissions and their public meetings remain; the Board of Supervisors keeps review."],
+ cons:["Removes checks and balances and weakens commission independence.","Allows reorganizations without public hearings.","Opponents say it favors the mayor and wealthy contributors who spent millions to qualify it; Small Business Forward calls it a blunt instrument."],
+ endorse:{growsf:"Y",chron:"Y",spur:"Y",sfdem:"Y",edlee:"Y",league:"N",sfgop:"U"},
+ supporters:"SF Democratic Party, SF Chamber of Commerce, SPUR, Firefighters 798, SEIU 87, Hotel Council, Building Trades", opponents:"Small Business Forward, Democratic Socialists SF, SF Green Party",
+ lens:{safety:"Shifts power over the Police Chief from the Police Commission to the mayor; voters would hold the mayor directly accountable for policing.",downtown:"Backers say faster reorganizations help the city respond to downtown's problems."},
+ sources:[S.lwv,["SF Chronicle: Yes on Prop F","https://www.sfchronicle.com/opinion/editorials/article/prop-f-mayor-san-francisco-22469130.php"],S.growsf,S.spur,S.league]},
+
+{id:"prop-g", group:"San Francisco measures", code:"G", kind:"measure",
+ title:"Cars back on the Great Highway on weekdays",
+ short:"Reopens the Upper Great Highway in Sunset Dunes Park to private cars Monday through Friday, keeping it a park on weekends.",
+ meta:["Ordinance","Citizen initiative (proponent: Richard Corriea)","Majority vote"],
+ what:["From 4 a.m. Monday to 6 p.m. Friday (except certain holidays), the road opens to private vehicles and closes to park use.",
+       "Supervisors could tweak minor details, but changing car days/hours would require another vote.",
+       "Background: voters closed the road permanently in 2024 (Prop K, 54.7% citywide, but it lost in District 4). The park logged over 1.7M visits in its first year, 53% on weekdays.",
+       "Opponents estimate reopening costs $10–14M plus $1.9M every year; see the Controller's analysis for the official figure."],
+ yes:"Reopen the road to cars on weekdays; park on weekends.",
+ no:"Keep Sunset Dunes car-free full time.",
+ pros:["Restores the weekday-car / weekend-park compromise many west-side residents preferred.","Supporters cite rising traffic injuries on Sunset side streets since closure.","Closure lengthens drive routes and, supporters argue, raises emissions; gives residents a choice of how to travel."],
+ cons:["Opponents say the park made the Sunset safer and car crashes are down.","Most traffic routes are unaffected and nearby business revenue is up, per opponents.","Reopening carries a one-time and ongoing cost; the coast belongs to everyone."],
+ endorse:{growsf:"N",chron:"N",spur:"N",sfdem:"N",edlee:"O",league:"O",sfgop:"U"},
+ supporters:"Chinese American Democratic Club, SF Taxpayers Association, Richmond District Democratic Club", opponents:"Sierra Club, Sunset Merchants Association, Outer Sunset Neighbors, SF League of Conservation Voters, Surfrider SF",
+ lens:{transit:"A west-side commute question: a north–south car route versus a car-free park.",safety:"Both sides make traffic-safety claims: supporters point to side-street injuries, opponents to fewer crashes.",taxes:"Opponents cite a $10–14M reopening cost plus $1.9M/yr."},
+ sources:[S.lwv,S.growsf,S.spur]},
+
+{id:"prop-h", group:"San Francisco measures", code:"H", kind:"measure",
+ title:"Parcel tax to fund Muni",
+ short:"A 15-year flat-rate property tax, based on building type and size, to close Muni's operating deficit.",
+ meta:["Ordinance (special tax)","Citizen initiative","Majority vote under current court rulings"],
+ what:["Starts in 2027 for 15 years, adjusted for inflation; based on property type and size, not value.",
+       "Single-family homes and condos: $129/yr up to 3,000 sq ft, with per-square-foot add-ons above that. Multi-family: $249 up to 5,000 sq ft. Commercial/mixed-use: $799 up to 5,000 sq ft, capped at $400,000.",
+       "Seniors 65+ living in their homes can get a reduced or zero tax. Rent-controlled landlords can pass through up to 50% (max $65 per unit per year).",
+       "Raises up to about $184M a year (Chronicle). SFMTA projects a $307M deficit by 2027, rising to $398M by 2030. Supervisors can change or end the tax without a vote."],
+ yes:"Create the parcel tax for Muni operations.",
+ no:"Do not create the tax.",
+ pros:["Mayor Lurie told the Chronicle that without it wait times could double and service could be cut by as much as 30%.","Muni is how seniors and many downtown commuters get around; service cuts would hit economic recovery.","95% of homeowners would pay $129 in year one; large commercial owners pay the most. Even the SF Chamber of Commerce, which usually fights taxes, supports it."],
+ cons:["Asks owners to fund a ~$300M deficit for 15 years without required cost cuts, efficiency targets or spending review.","A square-footage tax isn't fair to all owners; renters can still get partial pass-throughs.","The SF Republican Party's representative told the Chronicle he has seen no convincing plan for Muni's future."],
+ endorse:{growsf:"Y",chron:"Y",spur:"Y",sfdem:"Y",edlee:"Y",league:"Y",sfgop:"N"},
+ supporters:"SF Chamber of Commerce, Bay Area Council, SF Democratic Party, SF Labor Council, SF Tenants Union, Firefighters 798, TWU 250A", opponents:"SF Republican Party, Business League",
+ lens:{taxes:"New tax on your home: $129/yr for a home up to 3,000 sq ft (more above that), inflation-adjusted, for 15 years.",transit:"Directly funds Muni operations; SFMTA's budget plan counts on it alongside RTM.",downtown:"Supporters frame Muni service as essential for commuters returning downtown.",home:"Applies per parcel to owner-occupied homes; senior homeowners 65+ can get reductions."},
+ sources:[S.lwv,["SF Chronicle: Yes on Prop H","https://www.sfchronicle.com/opinion/editorials/article/prop-h-muni-san-francisco-22456325.php"],S.growsf,S.spur,S.league]},
+
+{id:"prop-i", group:"San Francisco measures", code:"I", kind:"measure",
+ title:"Transfer-tax set-aside for affordable housing",
+ short:"Sends half of the transfer tax on $10M-plus property sales into a new affordable-housing fund.",
+ meta:["Ordinance","Citizen initiative","Majority vote"],
+ what:["For sales of $10M or more (taxed at 5.5% or 6%), half the revenue would go to a new House SF Fund instead of the General Fund.",
+       "At least 60% for housing production, 25% to buy or repair buildings, 10% for eviction prevention and rent aid, up to 5% administration.",
+       "Exempts some newly built multi-unit buildings from the tax.",
+       "If it conflicts with Prop J, Prop I prevails (they don't appear to conflict)."],
+ yes:"Dedicate half of high-end transfer-tax revenue to affordable housing.",
+ no:"Keep the revenue flexible in the General Fund.",
+ pros:["Funds affordable housing without raising taxes.","Encourages construction by cutting the tax on some new buildings.","Carries out what supporters say voters intended in 2020 when they raised taxes on luxury sales."],
+ cons:["Diverting money reduces flexibility and could squeeze first responders, street cleaning and parks.","Doesn't require any specific number of housing units.","Adds another set-aside to a budget already heavily earmarked."],
+ endorse:{growsf:"N",chron:"N",spur:"N",sfdem:"N",edlee:"N",league:"Y",sfgop:"U"},
+ supporters:"Affordable Housing Alliance, SF Tenants Union, United Educators of SF, SEIU 1021, Small Business Forward", opponents:"SF Taxpayers Association, SF Building and Construction Trades Council",
+ lens:{taxes:"No new tax; moves existing revenue away from general services such as police and street cleaning.",downtown:"Revenue comes mostly from large commercial and multifamily sales."},
+ sources:[S.lwv,S.growsf,S.spur,S.league]},
+
+{id:"prop-j", group:"San Francisco measures", code:"J", kind:"measure",
+ title:"End transfer-tax break on large foreclosures",
+ short:"Lenders that take over big commercial buildings, hotels and large apartment buildings through foreclosure would pay transfer tax on full value.",
+ meta:["Ordinance","Placed by 10 supervisors","Majority vote"],
+ what:["Today lenders taking property through foreclosure are taxed only on value above the unpaid debt.",
+       "Starting 2027, that exemption ends for commercial buildings, residential buildings with 5+ units, and hotels.",
+       "Single-family homes, condos, co-ops and small buildings (4 or fewer units) keep the exemption.",
+       "Supporters estimate $100–150M a year in revenue."],
+ yes:"End the foreclosure exemption for large and commercial properties.",
+ no:"Keep the current exemption.",
+ pros:["Closes a break used by large corporate lenders rather than the homeowners it was designed for in 1984.","Raises $100–150M a year to help close the budget gap without service cuts.","Homes and small buildings stay protected."],
+ cons:["No other major California city taxes lenders this way, making SF lending riskier and pricier.","Could discourage investment in multifamily and commercial property at a fragile time.","Hits distressed buildings in particular."],
+ endorse:{growsf:"Y",chron:"U",spur:"Y",sfdem:"Y",edlee:"N",league:"Y",sfgop:"U"},
+ supporters:"SEIU 1021, SEIU 2015, Teamsters 665, SF Democratic Party", opponents:"SF Taxpayers Association",
+ lens:{taxes:"New tax on lenders in large foreclosures; homeowners and small buildings are exempt.",downtown:"Relevant to distressed downtown office and hotel properties; critics say it raises borrowing costs there, supporters say it captures revenue from those transfers."},
+ sources:[S.lwv,S.growsf,S.spur,S.league,S.edlee]},
+
+/* ===== Regional ===== */
+{id:"prop-rtm", group:"Regional measure", code:"RTM", kind:"measure",
+ title:"Bay Area regional transit sales tax",
+ short:"A 14-year sales tax in five counties to keep BART, Muni, Caltrain and other systems running: 1% in San Francisco, 0.5% elsewhere.",
+ meta:["Regional citizen initiative","5 counties","Simple majority"],
+ what:["Adds 1 percentage point to the sales tax in San Francisco and 0.5 points in Alameda, Contra Costa, San Mateo and Santa Clara for 14 years; about $980M a year regionally.",
+       "San Francisco's money goes mostly to Muni (~63%, about $144–155M/yr) and BART (~29%), plus Caltrain and a small share for Golden Gate Transit.",
+       "About 5% funds rider improvements: free/discounted transfers, Clipper START, signage, bus-priority projects.",
+       "Requires independent efficiency reviews of BART, Muni, Caltrain and AC Transit; funding can be withheld from agencies that miss standards on fares, service, cleanliness or maintenance."],
+ yes:"Approve the regional transit sales tax.",
+ no:"Reject it.",
+ pros:["Prevents deep cuts: combined deficits exceed $800M a year, and agencies warn of fewer trains, station closures, higher fares and shorter hours.","Keeps workers reaching job centers and limits Bay Bridge and 101 congestion.","Pays for operations (drivers, maintenance, frequency), not just construction, and adds efficiency reviews and oversight."],
+ cons:["Sales taxes are regressive and Bay Area rates are already near the legal ceiling; SF pays double the other counties' rate.","May subsidize inefficient agencies; the strongest efficiency reviews only kick in after approval.","Money may not bring back riders lost to remote work or safety and cleanliness concerns; governance stays fragmented; another crisis could hit when it expires."],
+ endorse:{growsf:"Y",chron:"U",spur:"Y",sfdem:"U",edlee:"Y",league:"Y",sfgop:"U"},
+ supporters:"Connect Bay Area coalition, Mayor Lurie, state Sen. Scott Wiener (author of enabling law SB 63)", opponents:"Committee for Affordable Bay Area Transit (Gregg Dieguez), which also sued over the ballot language",
+ lens:{taxes:"Raises the SF sales tax by 1 percentage point for 14 years.",transit:"Largest single funding source on the ballot for Muni and BART; SFMTA's budget assumes it.",downtown:"Backers say BART/Muni service levels determine how easily commuters reach downtown."},
+ sources:[["LWV Bay Area Pros & Cons: Regional Transit Measure (PDF)","https://my.lwv.org/sites/default/files/2026_nov_bay_transit_measure_pros_cons.pdf"],["GrowSF: Prop RTM","https://growsf.org/voter-guide/san-francisco-voter-guide-november-2026-election/measures/prop-rtm/"],["KQED: Regional Measure RTM","https://www.kqed.org/voterguide/california/regional-measure-rtm"],["KQED: lawsuit against transit measure","https://www.kqed.org/news/12095616/bay-area-group-files-lawsuit-against-transit-funding-measure-says-its-deceptive"],S.spur]},
+
+/* ===== State propositions ===== */
+{id:"prop-1", group:"California propositions", code:"1", kind:"measure", st:true,
+ title:"$11.25B housing and veterans bond",
+ short:"State borrowing for affordable housing, homeownership help, and veterans' home loans.",
+ meta:["Legislative bond","Majority vote"],
+ what:["About $10B for affordable housing and homeownership; $1.25B for veteran home and farm loans.","Mostly rental construction and renovation, with set-asides for homeless housing, first-time buyers, farmworkers, students and tribes.","Repaid from the General Fund at roughly $500–600M a year for about 25 years (veteran loans repay themselves)."],
+ yes:"Approve the borrowing.", no:"Don't borrow.",
+ pros:["Builds housing for veterans, workers, seniors and people at risk of homelessness without raising taxes.","Requires public reporting on results."],
+ cons:["No official argument against was submitted. General concern: adds about $500–600M a year in state debt service for 25 years."],
+ endorse:{growsf:"Y",spur:"Y",edlee:"Y",league:"Y"},
+ lens:{taxes:"No new tax, but adds long-term state debt payments from the General Fund.",home:"Includes first-time homebuyer assistance."},
+ sources:[S.lwvca,S.growsf,S.spur,S.league]},
+
+{id:"prop-2", group:"California propositions", code:"2", kind:"measure", st:true,
+ title:"Bigger state rainy-day fund",
+ short:"Raises the cap on California's reserve fund from 10% to 20% of General Fund taxes.",
+ meta:["Legislative constitutional amendment","Majority vote"],
+ what:["Doubles the savings target to 20%.","Deposits count toward the state spending limit only when spent.","Extends extra debt payments 10 more years and lets the fund cover more kinds of debt."],
+ yes:"Save more in strong years.", no:"Keep the 10% cap.",
+ pros:["Protects schools, health care and public safety in downturns (Gov. Newsom and Xavier Becerra support it).","Makes budgets easier to balance in weak years."],
+ cons:["Weakens the voter-approved state spending limit.","Makes taxpayer refunds less likely; many Republicans say surpluses should go back to taxpayers."],
+ endorse:{growsf:"Y",spur:"Y",edlee:"Y",league:"O"},
+ lens:{taxes:"Changes how surpluses are handled; opponents argue it reduces the chance of taxpayer rebates under the spending limit."},
+ sources:[S.lwvca,["CBS: What's on California's ballot","https://www.cbsnews.com/sacramento/news/whats-on-california-statewide-ballot-2026-election/"],S.growsf,S.spur]},
+
+{id:"prop-3", group:"California propositions", code:"3", kind:"measure", st:true,
+ title:"Make high-income tax rates permanent",
+ short:"Makes the higher income-tax rates on top earners (first passed in 2012) permanent instead of expiring in 2031.",
+ meta:["Initiative constitutional amendment","Majority vote"],
+ what:["Applies to roughly the top 2% of taxpayers (individual income above about $360,000).","Not a new tax; ends the 2031 sunset.","Keeps $5–15B a year flowing; about 40% goes to schools and community colleges."],
+ yes:"Keep the rates permanently.", no:"Let them expire in 2031.",
+ pros:["Prevents future cuts to education and health care.","Includes spending rules; supported by the state's largest teachers union."],
+ cons:["Voters were told in 2012 the rates were temporary.","California already has some of the highest taxes in the country; the state should cut waste instead."],
+ endorse:{growsf:"Y",spur:"Y",edlee:"Y",league:"Y"},
+ lens:{taxes:"Directly affects your income taxes if your household is in the top ~2%; otherwise affects state revenue for schools and health care."},
+ sources:[S.lwvca,["CalMatters via GV Wire: guide to all 14 props","https://gvwire.com/2026/10/26/your-voter-guide-to-all-14-propositions-on-the-california-ballot/"],S.growsf,S.spur]},
+
+{id:"prop-4", group:"California propositions", code:"4", kind:"measure", st:true,
+ title:"Allow public financing of campaigns",
+ short:"Lifts the statewide ban on using public money for candidates' campaigns; creates no program by itself.",
+ meta:["Legislative measure","Majority vote"],
+ what:["Lets the state and local governments create public financing programs, with spending limits and community-support requirements.","Can't use money set aside for education, transportation or public safety; can't favor parties or incumbents.","Allows fines up to 3x illegal foreign contributions. Costs a few hundred thousand dollars a year to start."],
+ yes:"Allow public financing programs.", no:"Keep the ban.",
+ pros:["Reduces reliance on wealthy donors and special interests.","Lets each community decide for itself."],
+ cons:["Taxpayer money could fund negative ads, mailers and texts.","No limit on how many candidates could get public money; research on results is mixed."],
+ endorse:{growsf:"N",spur:"Y",edlee:"N",league:"Y"},
+ lens:{taxes:"Any program a city or the state later creates would be paid with public funds."},
+ sources:[S.lwvca,S.growsf,S.spur,S.league]},
+
+{id:"prop-5", group:"California propositions", code:"5", kind:"measure", st:true,
+ title:"Recall election changes",
+ short:"Removes the 'who should replace them' question from state recall ballots.",
+ meta:["Legislative constitutional amendment","Majority vote"],
+ what:["Voters would decide only whether to remove an official.","A replacement would need a majority, usually in a later special election; for a recalled governor, the lieutenant governor takes over."],
+ yes:"Separate the recall from the replacement.", no:"Keep the current one-ballot system.",
+ pros:["Protects majority rule; prevents a replacement winning with a small plurality."],
+ cons:["Voters should be able to remove and replace at the same time.","Could lead to appointments or extra special elections; the recalled official could run again."],
+ endorse:{growsf:"Y",spur:"Y",edlee:"Y",league:"Y"},
+ supporters:"California Democratic Party", opponents:"Republicans generally",
+ lens:{},
+ sources:[S.lwvca,S.growsf,S.spur]},
+
+{id:"prop-37", group:"California propositions", code:"37", kind:"measure", st:true,
+ title:"Down-payment loans for middle-income buyers",
+ short:"Up to $25B in revenue bonds (repaid by homebuyers, not taxpayers) for second loans covering up to 17% of a home's price.",
+ meta:["Initiative","Majority vote"],
+ what:["Buyers must meet income and price limits, put down at least 3%, have lived in California a year, and live in the home.","Builders can opt into higher labor standards.","LAO: likely no direct cost to state or local government."],
+ yes:"Create the loan program.", no:"Don't create it.",
+ pros:["Helps renters and first-time buyers with down payments; could spur new construction.","Supported by unions, developers and the Democratic Party."],
+ cons:["No official argument against. Critics say it could leave buyers with more debt, and the League says it mostly helps new construction."],
+ endorse:{growsf:"Y",spur:"Y",edlee:"Y",league:"O"},
+ lens:{home:"Aimed at first-time buyers rather than existing owners."},
+ sources:[S.lwvca,S.growsf,S.spur,S.league]},
+
+{id:"prop-38", group:"California propositions", code:"38", kind:"measure", st:true,
+ title:"$8.4B immunology research bond",
+ short:"State bonds for immune-system research; about half to a single research institute.",
+ meta:["Initiative bond","Majority vote"],
+ what:["At least half for research on cancer, heart disease and Alzheimer's.","State gets 10% of revenue from discoveries; treatments offered at a 20% discount in California.","Repaid from the General Fund at about $500–600M a year for ~20 years. Sponsored by Gary Michelson."],
+ yes:"Approve the bonds.", no:"Reject them.",
+ pros:["Could produce new treatments and offset federal research cuts."],
+ cons:["Billions in debt without guaranteed returns.","Research priorities should go through scientific review and the budget, not one institute."],
+ endorse:{growsf:"N",spur:"U",edlee:"N",league:"N"},
+ lens:{taxes:"Adds state debt payments of about $500–600M a year."},
+ sources:[S.lwvca,S.growsf,S.league]},
+
+{id:"prop-39", group:"California propositions", code:"39", kind:"measure", st:true,
+ title:"Voter ID requirement",
+ short:"Requires government ID to vote in person and ID numbers on mail ballots.",
+ meta:["Initiative","Majority vote"],
+ what:["In-person voters show ID; mail voters write the last 4 digits of an ID number on the envelope, which must match records.","State provides free ID cards and officials try to verify citizenship.","Costs tens of millions to low hundreds of millions a year."],
+ yes:"Require ID to vote.", no:"Keep current signature verification.",
+ pros:["Increases trust in elections and aligns California with other states; keeps mail voting and offers free IDs.","Republican backers have spent over $36M, nearly half from Richard Uihlein."],
+ cons:["California elections are already secure and fraud is rare.","Creates barriers and privacy risks, especially for low-income voters without licenses; costs hundreds of millions."],
+ endorse:{growsf:"N",spur:"N",edlee:"N",league:"N"},
+ lens:{taxes:"Ongoing state cost of tens to low hundreds of millions of dollars a year."},
+ sources:[S.lwvca,["CalMatters via GV Wire","https://gvwire.com/2026/10/26/your-voter-guide-to-all-14-propositions-on-the-california-ballot/"],S.growsf,S.spur]},
+
+{id:"prop-40", group:"California propositions", code:"40", kind:"measure", st:true,
+ title:"Billionaire tax",
+ short:"A one-time tax of up to 5% on the net worth of about 200 California billionaires, mostly for health care.",
+ meta:["Initiative","Majority vote","Competes with Props 41 and 42"],
+ what:["Applies to people who were California residents on Jan 1, 2026, with net worth over $1B; real estate and most retirement accounts exempt.","Payable in 2027 or over five years; 90% to health care, the rest to education and food aid.","LAO: probably tens of billions over several years; the state could lose under $1B a year in income tax if some billionaires leave.","If Prop 41 or 42 gets more yes votes than Prop 40, the billionaire tax does not take effect; if 40 gets the most, it voids them."],
+ yes:"Impose the one-time billionaire tax.", no:"Don't create a wealth tax.",
+ pros:["About 200 billionaires pay to protect health care, prevent teacher layoffs and support food aid amid federal cuts.","Ultra-wealthy Californians benefited from federal tax cuts."],
+ cons:["Could drive billionaires and their businesses out of a state that relies on their income-tax payments.","Opposed by Gov. Newsom, both governor candidates, the California Teachers Association and Planned Parenthood; critics say lawmakers could later expand it."],
+ endorse:{growsf:"N",spur:"O",edlee:"N",league:"Y",sfdem:"N"},
+ supporters:"SEIU-United Healthcare Workers West (sponsor), Sen. Bernie Sanders", opponents:"Gov. Newsom, Becerra and Hilton, CTA, tech executives; opponents had raised $99.8M vs. $31.7M for",
+ lens:{taxes:"Applies only to billionaires; the debate is over whether it shrinks the state's tax base if they leave.",downtown:"Opponents argue it could push wealthy founders and companies out of the Bay Area."},
+ sources:[S.lwvca,["CalMatters: Props 40, 41, 42","https://calmatters.org/health/2026/09/california-wealth-tax-prop-40-41-42/"],["Newsweek: billionaire tax could lose even if approved","https://www.newsweek.com/california-billionaire-tax-could-lose-even-if-voters-approve-it-12560468"],S.growsf,S.league]},
+
+{id:"prop-41", group:"California propositions", code:"41", kind:"measure", st:true,
+ title:"Audits and spending limits for new special taxes",
+ short:"Requires State Auditor reviews of programs funded by new special taxes, and bars new taxes exempt from the spending limit.",
+ meta:["Initiative constitutional amendment","Majority vote","Competes with Prop 40"],
+ what:["Before a voter-proposed special tax reaches the ballot, the Auditor reviews the program and identifies 10% in possible savings; the summary goes in the voter guide.","Programs funded by new or higher special taxes are audited every 4 years.","The state could not collect a new tax (from Jan 1, 2026 on) whose revenue sits outside the spending limit. This is the provision that would block Prop 40 if 41 gets more votes."],
+ yes:"Require audits and apply the spending limit to new taxes.", no:"Keep current rules.",
+ pros:["Independent audits expose waste and show whether taxed programs work.","New taxes should obey the spending limit."],
+ cons:["Funded by billionaires (Sergey Brin, Eric Schmidt's group) specifically to cancel Prop 40.","Law professors warn its wording adds budget complexity and uncertainty; the Chronicle urged a No vote."],
+ endorse:{growsf:"Y",chron:"N",spur:"N",edlee:"N",league:"N"},
+ supporters:"Building a Better California, Reform California, CalChamber", opponents:"SEIU-UHW and other Prop 40 backers",
+ lens:{taxes:"Adds hurdles and audits for future state special taxes."},
+ sources:[S.lwvca,["Official arguments (PDF)","https://vig.cdn.sos.ca.gov/2026/general/pdf/prop41-arg-rebuttals.pdf"],["Daily Journal: Props 41 and 42","https://dailyjournal.com/articles/395463-propositions-41-and-42-bad-ideas-that-threaten-to-hurt-all-californians"],S.growsf,S.spur]},
+
+{id:"prop-42", group:"California propositions", code:"42", kind:"measure", st:true,
+ title:"Ban new taxes on personal property and savings",
+ short:"Bars new state taxes on owning financial assets, retirement accounts and other personal property, and limits retroactive taxes.",
+ meta:["Initiative","Majority vote","Competes with Prop 40"],
+ what:["Bans new taxes after Jan 1, 2026 on holdings like stocks, retirement accounts, trusts and art.","Limits taxes that reach back to past income or events. Either provision would nullify Prop 40 if 42 gets more yes votes.","Could reduce future state revenue by an unknown amount."],
+ yes:"Ban new taxes on personal property and retroactive taxes.", no:"Keep current rules.",
+ pros:["Protects retirement accounts, savings and other personal property from new taxes.","Endorsed by Gov. Newsom, who argues wealth taxes should be handled nationally."],
+ cons:["Funded by billionaires to block Prop 40.","Critics say loose wording could shield capital gains and complicate state finances."],
+ endorse:{growsf:"Y",chron:"N",spur:"N",edlee:"Y",league:"N"},
+ supporters:"Building a Better California, Gov. Newsom", opponents:"Prop 40 backers",
+ lens:{taxes:"Permanently rules out new state wealth or savings taxes on individuals.",home:"Protects personal financial assets; real property taxes are unaffected."},
+ sources:[S.lwvca,["CalMatters: Props 40, 41, 42","https://calmatters.org/health/2026/09/california-wealth-tax-prop-40-41-42/"],["Newsweek","https://www.newsweek.com/california-billionaire-tax-could-lose-even-if-voters-approve-it-12560468"],S.growsf,S.edlee]},
+
+{id:"prop-43", group:"California propositions", code:"43", kind:"measure", st:true,
+ title:"Two-thirds vote for local special taxes",
+ short:"Requires two-thirds voter approval for all local special taxes, including ones placed by citizen petition.",
+ meta:["Initiative","Majority vote"],
+ what:["Today citizen-placed local special taxes (like this year's SF Prop H and RTM) pass with a simple majority under recent court rulings; government-placed ones need two-thirds.","From Jan 1, 2027, all would need two-thirds, including extensions and increases.","Bars citizen initiatives from creating property-value-based taxes beyond those the Constitution allows."],
+ yes:"Require two-thirds for all local special taxes.", no:"Keep the majority rule for citizen-placed taxes.",
+ pros:["Closes a court-created loophole and makes tax increases harder.","Protects homeowners, renters and small businesses."],
+ cons:["Makes it harder to fund schools, roads, transit, police and fire locally.","Just over a third of voters could block a tax that nearly two-thirds support."],
+ endorse:{growsf:"Y",spur:"N",edlee:"Y",league:"N"},
+ supporters:"Howard Jarvis Taxpayers Association, Reform California", opponents:"Assemblymember Buffy Wicks, Evolve California",
+ lens:{taxes:"Would make future SF tax measures like Prop H harder to pass (it doesn't affect this election).",transit:"Future local transit funding measures would face a higher bar.",home:"Taxpayer groups present it as homeowner protection."},
+ sources:[S.lwvca,["GV Wire: decoding the tax props","https://gvwire.com/?p=269570"],S.growsf,S.spur]},
+
+{id:"prop-44", group:"California propositions", code:"44", kind:"measure", st:true,
+ title:"90% patient-care spending rule for clinics",
+ short:"Requires nonprofit safety-net clinics to spend at least 90% of revenue on health care.",
+ meta:["Initiative","Majority vote"],
+ what:["Clinics average about 80% today; the Attorney General would define what counts.","Clinics that fall short pay the difference to the state (recoverable within 5 years).","Enforcement costs low tens of millions a year, paid by clinic fees."],
+ yes:"Impose the 90% rule.", no:"Keep current rules.",
+ pros:["Cuts wasteful spending such as high executive pay and sends more to patient care."],
+ cons:["Limits spending on staff, equipment and translation; some clinics could close and push patients to ERs.","Opposed by the Democratic Party and health-care associations."],
+ endorse:{growsf:"N",spur:"U",edlee:"N",league:"N"},
+ supporters:"SEIU-United Healthcare Workers West", opponents:"California Democratic Party, clinic and health-care associations",
+ lens:{},
+ sources:[S.lwvca,["CalMatters via GV Wire","https://gvwire.com/2026/10/26/your-voter-guide-to-all-14-propositions-on-the-california-ballot/"],S.growsf,S.league]},
+
+{id:"prop-45", group:"California propositions", code:"45", kind:"measure", st:true,
+ title:"Faster environmental review (CEQA) for essential projects",
+ short:"Lets certain housing, energy, water, school, hospital and transportation projects use faster CEQA rules with limits on lawsuits.",
+ meta:["Initiative","Majority vote"],
+ what:["Sets strict deadlines, shorter comment periods and limited court review; courts could halt only the affected part of a project.","Excludes high-speed rail, Delta water projects, nuclear power, jails and prisons.","State costs high tens of millions a year at first, partly covered by fees."],
+ yes:"Adopt the faster review rules.", no:"Keep current CEQA rules.",
+ pros:["Delays and lawsuits drive up costs of housing and infrastructure; firm deadlines fix that while keeping protections (CalChamber, sponsor)."],
+ cons:["Weakens public input and environmental review; risks to communities near industrial pollution.","No guarantee of lower housing or utility costs; opposed by the Sierra Club and Building Trades, and some YIMBYs object to its design."],
+ endorse:{growsf:"Y",spur:"O",edlee:"Y",league:"N"},
+ supporters:"California Chamber of Commerce (sponsor)", opponents:"Sierra Club, State Building Trades, environmental groups",
+ lens:{transit:"Transportation projects could qualify for faster review.",downtown:"Business groups pitch it as a way to speed building statewide."},
+ sources:[S.lwvca,["CalMatters via GV Wire","https://gvwire.com/2026/10/26/your-voter-guide-to-all-14-propositions-on-the-california-ballot/"],S.growsf,S.league]},
+
+/* ===== Candidate races ===== */
+{id:"cd-11", group:"Federal", code:"CA-11", kind:"race",
+ title:"U.S. House, District 11",
+ short:"Open seat: Nancy Pelosi is retiring after nearly 40 years. Covers most of San Francisco. Two Democrats advanced from the June primary (Wiener 40.7%, Chan 29.7%).",
+ meta:["2-year term","Most of SF; check your sample ballot"],
+ cands:[
+  {name:"Scott Wiener",party:"Democrat",role:"State Senator; former District 8 supervisor",
+   f:["Authored 100+ state laws; best known for pro-housing bills and SB 63, which enabled the regional transit tax.","Described by Politico as the more moderate candidate; seen as friendlier to the business community.","Platform includes rolling back Republican tax cuts and paying cities $10,000 per new home built."],
+   a:["Opponents call him a 'corporate Democrat' and point to developer and tech money.","Criticized from multiple directions on Israel/Gaza; his stances have shifted during the campaign.","Has lost some support among Republican-leaning precincts he once carried."],
+   e:"California Democratic Party, AG Rob Bonta, Supervisor Rafael Mandelman, GrowSF, Ed Lee Dem Club, SF Chronicle (primary)"},
+  {name:"Connie Chan",party:"Democrat",role:"District 1 Supervisor (Richmond); former aide to then-DA Kamala Harris",
+   f:["Focus on affordability: housing working families can afford, and lowering health-care, education and child-care costs.","Pledges to 'take on the big corporations' and tax the wealthy.","Emphasizes community input and protecting residents from rapid change."],
+   a:["Pro-housing groups see her emphasis on community input as slowing new construction.","Wiener's campaign pressed her on past public-safety rhetoric; raised far less money.","Wiener's campaign attacked her backing from D.C. insiders."],
+   e:"Nancy Pelosi, Sen. Adam Schiff, Saikat Chakrabarti, League of Pissed Off Voters, SF Green Party"}],
+ lens:{safety:"Public safety was a flashpoint in their debates.",transit:"Wiener wrote the law that put RTM on the ballot.",taxes:"Both favor rolling back federal tax cuts for high earners; Chan emphasizes taxing the wealthy more."},
+ sources:[["Ballotpedia News: CA-11 candidates on housing","https://news.ballotpedia.org/2026/07/16/two-democratic-candidates-running-in-the-general-election-for-californias-11th-congressional-district-take-opposing-sides-on-housing-policy/"],["Mission Local: final debate and fundraising","https://missionlocal.org/?p=877432"],["The Real Deal: CA-11 housing showdown","https://therealdeal.com/san-francisco/2026/06/08/wiener-chan-advance-to-november-in-ca-11-housing-showdown/"],["SF Standard: Wiener's path","https://sfstandard.com/2026/06/12/months-wiener-had-clear-path-congress-now-much/"],S.certList]},
+
+{id:"cd-15", group:"Federal", code:"CA-15", kind:"race",
+ title:"U.S. House, District 15",
+ short:"Only on ballots in SF's southern neighborhoods (Excelsior, Portola, Visitacion Valley, Ingleside). Incumbent vs. Republican challenger.",
+ meta:["2-year term","Southern SF only"],
+ cands:[
+  {name:"Kevin Mullin",party:"Democrat",role:"Incumbent U.S. Representative",f:["Incumbent; endorsed by GrowSF and the Ed Lee Dem Club."],a:["Little organized opposition found in local sources."],e:"GrowSF, Ed Lee Dem Club"},
+  {name:"Charles Hoelter",party:"Republican",role:"Retired training supervisor",f:["Offers a Republican alternative in a heavily Democratic district."],a:["Little campaign information available in the sources reviewed."],e:"No local endorsements found"}],
+ lens:{},
+ sources:[S.certList,["Mission Local: CA-11 boundaries","https://missionlocal.org/2026/08/sf-congress-candidates-top-priority/"],S.growsf]},
+
+{id:"gov", group:"Statewide offices", code:"Gov", kind:"race",
+ title:"Governor",
+ short:"Open seat (Newsom is termed out). Polls show Becerra well ahead: 54–32 in one October poll, 61–37 in PPIC's.",
+ meta:["4-year term"],
+ cands:[
+  {name:"Xavier Becerra",party:"Democrat",role:"Former U.S. HHS Secretary, California AG, and 24-year congressman",
+   f:["Deep government experience; as AG sued the first Trump administration over DACA and defended the ACA.","Promises to protect health care, keep Wall Street investors from outbidding families for homes, and protect workers from AI job losses.","Supports Prop 2 and opposes Prop 40."],
+   a:["Has not laid out many specific policies (CalMatters).","Former consultants pleaded guilty to stealing funds from a dormant Becerra campaign account.","Progressive critics fault him for dropping Medicare for All support and for Chevron and big-tech-funded outside spending."],
+   e:"GrowSF, Ed Lee Dem Club, SF Young Democrats (primary)"},
+  {name:"Steve Hilton",party:"Republican",role:"Former Fox News host; endorsed by President Trump",
+   f:["Proposes eliminating state income tax on the first $150,000 earned.","Would cap government fees on new homes at $50,000 and build '10 new cities'.","Pledges $3 gas, halved electricity bills, and abolishing the DMV."],
+   a:["Becerra says the tax plan hands the wealthiest a large tax cut.","Trump endorsement is a liability with most California voters."],
+   e:"Trump; California Republicans"}],
+ lens:{taxes:"Sharpest tax contrast on the ballot: Hilton's income-tax cut versus Becerra's status-quo approach.",home:"Both talk housing costs: Hilton via fee caps and new cities, Becerra via limits on investor buying."},
+ sources:[["MultiState: Becerra vs. Hilton","https://www.multistate.us/elections/governor-race/california-2026"],["CalMatters late voter guide","https://calmatters.org/politics/2026/10/midterm-late-voter-guide/"],["NBC News: Becerra advances","https://www.nbcnews.com/politics/2026-election/democrat-xavier-becerra-advances-california-governors-race-rcna347480"],["LA Forward (progressive guide)","https://laforwardguide.org/guide/statewide-offices"],S.certList]},
+
+{id:"ltgov", group:"Statewide offices", code:"LtG", kind:"race", title:"Lieutenant Governor",
+ short:"First in line of succession; presides over the state Senate and casts tie-breaking votes.", meta:["4-year term"],
+ cands:[
+  {name:"Fiona Ma",party:"Democrat",role:"State Treasurer since 2019; CPA; former SF supervisor",f:["Experienced statewide officeholder with a finance background and San Francisco roots."],a:["Critics on the left see her as an establishment pick; the Pissed Off Voters made no endorsement."],e:"GrowSF, Ed Lee Dem Club"},
+  {name:"Gloria Romero",party:"Republican",role:"Former Democratic state Senate majority leader (2005–08); educator",f:["Former Democratic Senate leader now running as a Republican."],a:["Little SF-specific coverage found."],e:"California Republicans"}],
+ lens:{}, sources:[["CBS: statewide races","https://www.cbsnews.com/sacramento/news/whats-on-california-statewide-ballot-2026-election/"],["Wikipedia: 2026 Lt. Gov. election","https://en.wikipedia.org/wiki/2026_California_lieutenant_gubernatorial_election"],S.certList]},
+
+{id:"ag", group:"Statewide offices", code:"AG", kind:"race", title:"Attorney General",
+ short:"The state's top law-enforcement officer.", meta:["4-year term"],
+ cands:[
+  {name:"Rob Bonta",party:"Democrat",role:"Incumbent Attorney General",f:["Incumbent seeking a second full term."],a:["Progressive critics say some of his settlements delivered few real wins."],e:"GrowSF, Ed Lee Dem Club"},
+  {name:"Michael Gates",party:"Republican",role:"Deputy U.S. Attorney; former Huntington Beach City Attorney",f:["Brings experience as a city attorney and federal prosecutor."],a:["Critics call him a Trump supporter who has backed the White House on many issues."],e:"California Republicans"}],
+ lens:{safety:"The AG sets statewide criminal-justice priorities."},
+ sources:[["CBS: statewide races","https://www.cbsnews.com/sacramento/news/whats-on-california-statewide-ballot-2026-election/"],["LA Forward","https://laforwardguide.org/guide/statewide-offices"],S.certList]},
+
+{id:"sos", group:"Statewide offices", code:"SoS", kind:"race", title:"Secretary of State",
+ short:"Runs state elections and business filings.", meta:["4-year term"],
+ cands:[
+  {name:"Shirley N. Weber",party:"Democrat",role:"Incumbent Secretary of State",f:["Incumbent; endorsed across the Democratic spectrum including GrowSF and the Pissed Off Voters."],a:["Little SF-specific debate found."],e:"GrowSF, Ed Lee Dem Club, League of Pissed Off Voters"},
+  {name:"Don Wagner",party:"Republican",role:"Orange County Supervisor",f:["Orange County Supervisor; Republican alternative."],a:["Little SF-specific coverage found."],e:"California Republicans"}],
+ lens:{}, sources:[S.certList,S.growsf,S.league]},
+
+{id:"controller", group:"Statewide offices", code:"Ctrl", kind:"race", title:"Controller",
+ short:"The state's chief fiscal officer: audits spending and pays the bills.", meta:["4-year term"],
+ cands:[
+  {name:"Malia Cohen",party:"Democrat",role:"Incumbent Controller; former SF supervisor",f:["Incumbent with SF roots; endorsed by GrowSF and the Ed Lee Dem Club."],a:["The League of Pissed Off Voters declined to endorse."],e:"GrowSF, Ed Lee Dem Club"},
+  {name:"Herb Morgan",party:"Republican",role:"Chief investment officer",f:["Private-sector investment background."],a:["No government experience noted in sources reviewed."],e:"California Republicans"}],
+ lens:{taxes:"The Controller audits how tax dollars are spent."}, sources:[S.certList,S.growsf]},
+
+{id:"treasurer", group:"Statewide offices", code:"Treas", kind:"race", title:"Treasurer",
+ short:"Manages state investments and bond sales.", meta:["4-year term"],
+ cands:[
+  {name:"Eleni Kounalakis",party:"Democrat",role:"Lieutenant Governor (termed out)",f:["Current statewide officeholder; endorsed by GrowSF and Ed Lee Dem Club."],a:["The League of Pissed Off Voters declined to endorse."],e:"GrowSF, Ed Lee Dem Club"},
+  {name:"Jennifer Hawks",party:"Republican",role:"Retired business executive",f:["Private-sector background."],a:["Little campaign information found."],e:"California Republicans"}],
+ lens:{}, sources:[S.certList,S.growsf]},
+
+{id:"insurance", group:"Statewide offices", code:"Ins", kind:"race", title:"Insurance Commissioner",
+ short:"Two Democrats with very different plans for the home-insurance crisis. Homeowners premiums rose 84% from 2020 to March 2026, and FAIR Plan policies have surged.", meta:["4-year term","Most competitive statewide race"],
+ cands:[
+  {name:"Ben Allen",party:"Democrat",role:"State Senator (Santa Monica area)",
+   f:["Wants to fix the private market: shorten rate reviews from years to months, allow catastrophe modeling in rates, and fund wildfire mitigation.","Proposes an insurance 'payers bill of rights' and tougher enforcement on slow claims.","Endorsed by the California Democratic Party."],
+   a:["Seen by analysts as more industry-friendly and a continuation of outgoing Commissioner Lara's approach.","Kim says his plan doesn't fix the FAIR Plan at the scale needed."],
+   e:"California Democratic Party, GrowSF, Ed Lee Dem Club"},
+  {name:"Jane Kim",party:"Democrat",role:"Former SF supervisor; head of the CA Working Families Party",
+   f:["Proposes a mandatory state-run 'natural disaster for all' insurance program for wildfire and flood, which she says would shrink the FAIR Plan.","Expand low-cost auto insurance to all drivers; hold insurers accountable.","Backed by Sen. Bernie Sanders."],
+   a:["Allen's ads call her plan a costly government takeover that could 'bankrupt the state'.","Insurance analysts see it as highly interventionist and possibly reducing insurer participation."],
+   e:"Bernie Sanders, California Teachers Association, League of Pissed Off Voters"}],
+ lens:{home:"Directly shapes what you pay for homeowners insurance and whether insurers keep writing policies.",taxes:"A state-run disaster insurer would put public finances behind catastrophe risk."},
+ sources:[["SF Standard: Kim vs. Allen","https://sfstandard.com/2026/10/30/election-democrats-california-insurance-commissioner-jane-kim-ben-allen/"],["Insurance Business: market fixes vs. public insurer","https://www.insurancebusinessmag.com/us/news/breaking-news/california-insurance-commissioner-race-pits-market-fixes-against-a-public-disaster-insurer-594645.aspx"],["InsuranceNewsNet","https://insurancenewsnet.com/oarticle/who-are-democrats-kim-and-allen-californias-insurance-commissioner-candidates"],["CalMatters","https://calmatters.org/economy/2026/10/insurance-commissioner-california-nov-election/"],S.certList]},
+
+{id:"spi", group:"Statewide offices", code:"SPI", kind:"race", title:"Superintendent of Public Instruction",
+ short:"Nonpartisan office overseeing K-12 policy and a $150B schools budget. Shaw led the primary (22.6% to 20.3%).", meta:["Nonpartisan","4-year term"],
+ cands:[
+  {name:"Richard Barrera",party:"Nonpartisan (Democrat)",role:"San Diego Unified board president",f:["Wants more school funding, counselors, nurses and smaller classes; supports Prop 3.","Backed by both the CTA and the California Charter Schools Association, usually rivals."],a:["Critics see him as aligned with teachers unions and opposed to reforms they favor."],e:"California Teachers Association, Charter Schools Assn., SF Chronicle (primary), GrowSF, League of Pissed Off Voters"},
+  {name:"Sonja Shaw",party:"Nonpartisan (Republican)",role:"Chino Valley Unified board president",f:["Pitches a 'common sense' agenda and parental rights, including ending policies that bar staff from disclosing a student's gender identity to parents."],a:["Opponents call her views extreme; she presided over the meeting where the state superintendent was escorted out."],e:"Conservative and parental-rights groups"}],
+ lens:{}, sources:[["EdSource: Shaw vs. Barrera","https://edsource.org/2026/sonja-shaw-richard-barrera-state-superintendent-race/769259?amp=1"],["Wikipedia: 2026 SPI election","https://en.wikipedia.org/wiki/2026_California_Superintendent_of_Public_Instruction_election"],S.certList]},
+
+{id:"boe", group:"Statewide offices", code:"BOE2", kind:"race", title:"Board of Equalization, District 2",
+ short:"Two Democrats. The BOE oversees property-tax assessment practices and some tax programs; District 2 covers the Bay Area and coast.", meta:["4-year term"],
+ cands:[
+  {name:"Sally Lieber",party:"Democrat",role:"Incumbent BOE member; former Assemblymember",f:["Argues the board is 'lean but not mean' and the right size now."],a:["Some Bay Area Democrats prefer a change in leadership."],e:"California Democratic Party, CTA, League of Pissed Off Voters"},
+  {name:"John Pimentel",party:"Democrat",role:"San Mateo County Community College trustee",f:["Backed by Treasurer Fiona Ma and San José Mayor Matt Mahan."],a:["Challenging an incumbent with the party's endorsement."],e:"GrowSF, Ed Lee Dem Club, Fiona Ma, Matt Mahan"}],
+ lens:{taxes:"The BOE oversees how counties assess property for tax purposes.",home:"Property-tax assessment oversight."},
+ sources:[["HSJ Chronicle / CalMatters on BOE races","https://hsjchronicle.com/?p=71957"],S.certList,S.growsf,S.league]},
+
+{id:"ad-17", group:"State Legislature", code:"AD-17", kind:"race", title:"State Assembly, District 17",
+ short:"Eastern San Francisco. Check your sample ballot for 17 vs. 19.", meta:["2-year term"],
+ cands:[
+  {name:"Matt Haney",party:"Democrat",role:"Incumbent Assemblymember; former supervisor",f:["Incumbent; endorsed by GrowSF and Ed Lee Dem Club.","Backed the June 'Overpaid CEO' business tax, which voters rejected."],a:["Progressive guide declined to endorse; business-minded voters note his support for June's Prop D tax."],e:"GrowSF, Ed Lee Dem Club"},
+  {name:"Manuel Noris-Barrera",party:"Republican",role:"No ballot designation",f:["Republican alternative; previously endorsed by the SF GOP."],a:["Little campaign activity found."],e:"SF Republican Party (2024)"}],
+ lens:{}, sources:[S.certList,S.growsf,["Wikipedia: June 2026 Prop D","https://en.wikipedia.org/wiki/2026_San_Francisco_Proposition_D"]]},
+
+{id:"ad-19", group:"State Legislature", code:"AD-19", kind:"race", title:"State Assembly, District 19",
+ short:"Western San Francisco. Check your sample ballot for 17 vs. 19.", meta:["2-year term"],
+ cands:[
+  {name:"Catherine Stefani",party:"Democrat",role:"Incumbent Assemblymember; former District 2 supervisor",f:["Incumbent moderate; endorsed by GrowSF and Ed Lee Dem Club."],a:["Progressive guide declined to endorse."],e:"GrowSF, Ed Lee Dem Club"},
+  {name:"Philip Louis Wing",party:"Republican",role:"Retired financial advisor",f:["Republican alternative."],a:["Little campaign activity found."],e:"None found"}],
+ lens:{}, sources:[S.certList,S.growsf]},
+
+{id:"d2", group:"Board of Supervisors", code:"D2", kind:"race", title:"Supervisor, District 2",
+ short:"Marina, Pacific Heights, Cow Hollow, Presidio area. Sherrill won the June special election with about 69–70% and faces no serious opposition.", meta:["4-year term","Ranked-choice"],
+ cands:[
+  {name:"Stephen Sherrill",party:"Nonpartisan",role:"Incumbent (appointed 2024, elected June 2026)",f:["Policy and government-innovation background; record on public safety, small business and cost of living (GrowSF).","Chronicle: listens to constituents while weighing citywide needs; works closely with the mayor."],a:["His June opponent ran on whether residents feel listened to; he works closely with the mayor."],e:"GrowSF, SF Chronicle, Alice B. Toklas LGBTQ Dem Club"},
+  {name:"Other candidates",party:"",role:"Lesser-known challengers (see your sample ballot)",f:["No major campaign found."],a:[""],e:"None found"}],
+ lens:{safety:"Sherrill emphasizes public safety in his record."},
+ sources:[S.growsf,["Mission Local: D2 race","https://missionlocal.org/2026/06/sf-district-2-supervisor-november-sherrill-brooke/"],["SF Chronicle local endorsements","https://www.sfchronicle.com/opinion/editorials/article/endorsements-san-francisco-election-22490134.php"]]},
+
+{id:"d4", group:"Board of Supervisors", code:"D4", kind:"race", title:"Supervisor, District 4",
+ short:"Outer and Central Sunset, Parkside. The Great Highway is the defining issue. Wong won June's special election 64–36 after ranked-choice rounds.", meta:["4-year term","Ranked-choice"],
+ cands:[
+  {name:"Alan Wong",party:"Nonpartisan",role:"Incumbent (appointed by Mayor Lurie, elected June 2026); former City College trustee",
+   f:["Voted for the Family Zoning Plan and police funding; small-business permit simplification agenda.","Opposed the 2024 Great Highway closure and tried to put a reopening measure on the June ballot (it didn't qualify)."],
+   a:["Appointed by the mayor, which some see as limiting his independence.","Sunset Dunes campaign leader Lucas Lux backed a rival in June."],
+   e:"GrowSF, SF Chronicle, SF Examiner"},
+  {name:"Albert Chow",party:"Nonpartisan",role:"Great Wall Hardware owner",
+   f:["Leader of the Great Highway reopening movement and the 2025 Engardio recall.","Says he would 'bring balance back to San Francisco'."],
+   a:["Chronicle calls Wong's November opponents well-intentioned novices without government experience.","Did not respond to GrowSF's questionnaire."],
+   e:"None of the guides reviewed"},
+  {name:"Jeremy Greco",party:"Nonpartisan",role:"Campus coordinator",f:["Progressive alternative."],a:[""],e:"SF Green Party"}],
+ lens:{transit:"Ties directly to Prop G and how the Great Highway is used.",home:"Upzoning under the Family Zoning Plan is a live issue in the Sunset."},
+ sources:[["GrowSF: D4","https://growsf.org/voter-guide/san-francisco-voter-guide-november-2026-election/contests/district-4-supervisor/"],["KQED: D4 race","https://www.kqed.org/voterguide/sanfrancisco/supervisor-4th-district"],["Wikipedia: Alan Wong","https://en.wikipedia.org/wiki/Alan_Wong_(politician)"],["SF Chronicle endorsements","https://www.sfchronicle.com/projects/2026/california-sf-election-endorsements/"]]},
+
+{id:"d6", group:"Board of Supervisors", code:"D6", kind:"race", title:"Supervisor, District 6",
+ short:"SoMa, Mission Bay, Treasure Island, Tenderloin. Incumbent faces one challenger.", meta:["4-year term","Ranked-choice"],
+ cands:[
+  {name:"Matt Dorsey",party:"Nonpartisan",role:"Incumbent since 2022",f:["Led on recovery-focused drug policy, police staffing, speed cameras and housing; supported the Family Zoning Plan.","Supports the RESET Center on Sixth Street."],a:["Challenger calls him 'MAGA-lite', siding with wealthy interests over renters; opposed the June 'Overpaid CEO' tax."],e:"GrowSF"},
+  {name:"Alex Behrend",party:"Nonpartisan",role:"'Neglected Voter Organizer'",f:["Focus on turning out voters who usually stay home; more support for renters."],a:["Not considered a competitive challenger by local coverage."],e:"None found"}],
+ lens:{safety:"District 6 is the center of the city's drug-market and public-safety debate.",downtown:"Covers SoMa and parts of downtown."},
+ sources:[["Mission Local: D6","https://missionlocal.org/2026/09/matt-dorsey-no-competitive-challenger-d6/"],S.growsf]},
+
+{id:"d8", group:"Board of Supervisors", code:"D8", kind:"race", title:"Supervisor, District 8",
+ short:"Castro, Noe Valley, Glen Park, Diamond Heights. Open seat (Mandelman termed out). Frontrunner Manny Yekutiel quit Oct. 1 after sexual-assault allegations but remains on the ballot. A GrowSF poll showed McCoy 51%, Patel 49% in the final ranked-choice round.", meta:["4-year term","Ranked-choice: rank up to 10"],
+ cands:[
+  {name:"Gary McCoy",party:"Nonpartisan",role:"Former political director for Rep. Nancy Pelosi",f:["Pro-housing; has led both main LGBTQ Democratic clubs.","After Yekutiel's exit, picked up a wave of endorsements and is seen as the frontrunner."],a:["Patel says he has shifted moderate for votes; started from the progressive lane.","GrowSF ranks him second rather than first."],e:"SF Democratic Party, Nancy Pelosi, Alice B. Toklas Club, Harvey Milk Club, Ed Lee Dem Club, League of Pissed Off Voters (#1)"},
+  {name:"Darshini Patel",party:"Nonpartisan",role:"Former DoorDash and Obama White House staffer; community advocate",f:["Pro-housing, child-care focused; GrowSF's first choice.","Polling shows her within striking distance."],a:["Raised far less money; less known.","Publicly said GrowSF's endorsement came without her consent."],e:"GrowSF (#1)"},
+  {name:"Michael Nguyen",party:"Nonpartisan",role:"Patent attorney; DCCC member",f:["Progressive candidate; renter in the district since 2006."],a:["GrowSF rates him least aligned with its priorities."],e:"SF Green Party, Harvey Milk Club (#2), League of Pissed Off Voters (#2)"},
+  {name:"Manny Yekutiel",party:"Nonpartisan",role:"Owner of Manny's (withdrawn)",f:["Dropped out Oct. 1; name still printed on ballots."],a:["Faces multiple sexual-assault allegations, which he denies; endorsements withdrawn."],e:"Endorsements rescinded"}],
+ lens:{home:"Housing growth in Noe Valley and the Castro is central to this race."},
+ sources:[["SF Standard: D8 poll","https://sfstandard.com/2026/10/12/manny-yekutiel-grow-sf-gary-mccoy-darshini-patel/"],["KQED: SF Dems endorse McCoy","https://www.kqed.org/news/12104051/sf-democrats-move-to-endorse-gary-mccoy-for-district-8-supervisor"],["Mission Local: Patel on GrowSF","https://missionlocal.org/2026/10/darshini-patel-wants-you-to-know-growsf-endorsement-came-without-my-consent/"],S.growsf,S.league]},
+
+{id:"d10", group:"Board of Supervisors", code:"D10", kind:"race", title:"Supervisor, District 10",
+ short:"Bayview-Hunters Point, Potrero Hill, Dogpatch, Visitacion Valley. Open seat (Walton termed out); 10 candidates. A $500K+ donation from crypto billionaire Chris Larsen to a pro-Ellington PAC became a central issue.", meta:["4-year term","Ranked-choice"],
+ cands:[
+  {name:"Theo Ellington",party:"Nonpartisan",role:"Executive director, Bayview Opera House",f:["Focus on building approved housing, public safety (prosecuting fentanyl dealers and theft rings), Shipyard cleanup, and treatment; calls for a data-center moratorium pending review.","Only D10 frontrunner backing Props D, E and F; endorsed by Mayor Lurie."],a:["Rivals say outside billionaire money means donors 'expect a return'; Ellington called the gift more trouble than it's worth."],e:"Mayor Lurie, GrowSF, Ed Lee Dem Club"},
+  {name:"Dion-Jay 'DJ' Brookter",party:"Nonpartisan",role:"Former CEO of Young Community Developers",f:["Supervisor Walton's pick; wants a permanent ban on data centers in the district; runs as 'neighborhood supervisor'."],a:["GrowSF opposes him over housing and public-safety positions (e.g., on prosecuting dealers)."],e:"Shamann Walton, Art Agnos, League of Pissed Off Voters (dual)"},
+  {name:"J.R. Eppler",party:"Nonpartisan",role:"Small-business attorney; longtime Potrero Boosters leader",f:["Potrero Hill homeowner; wants to protect the district's industrial zones for jobs and focus on Shipyard cleanup."],a:["GrowSF says he has appealed housing projects in practice."],e:"Art Agnos, League of Pissed Off Voters (dual), SF Green Party"},
+  {name:"Others",party:"",role:"Shawn Richard, PJ Bastiany III, Deandra Bryant, Jamo Muhammad, Jessica Pessecow, Mike Lin, Ell Jennison Jr.",f:["Shawn Richard has endorsements from several former officials."],a:[""],e:"Bastiany: SF Green Party"}],
+ lens:{safety:"Sharpest public-safety contrast among the supervisor races.",home:"District has about 20,000 approved-but-unbuilt homes."},
+ sources:[["GrowSF: D10","https://growsf.org/voter-guide/san-francisco-voter-guide-november-2026-election/contests/district-10-supervisor/"],["Mission Local: Larsen PAC","https://missionlocal.org/2026/10/san-francisco-district-10-chris-larsen-pac-ellington-brookter-eppler/"],["SF Standard: Agnos weighs in","https://sfstandard.com/2026/10/15/mayor-art-agnos-big-tech-district-10-supervisor/"],S.league]},
+
+{id:"school-board", group:"Local offices", code:"SFUSD", kind:"race", title:"Board of Education (vote for 3)",
+ short:"Eight candidates for three seats. Two slates: a parent/reform group and a teachers-union slate.", meta:["4-year terms"],
+ cands:[
+  {name:"Phil Kim",party:"",role:"Incumbent board president",f:["Pushed measurable student-outcome goals and superintendent accountability; SF Parents Action credits him with putting algebra back in 8th grade."],a:["Teachers-union slate prefers other candidates."],e:"GrowSF, SF Parents Action, SF Democratic Party, Ed Lee Dem Club"},
+  {name:"Autumn Brown Garibay",party:"",role:"SFUSD parent and PTA leader",f:["Pushes clear links between district goals and school plans; helps families navigate enrollment."],a:["First run for office."],e:"GrowSF, SF Parents Action, SF Democratic Party, Ed Lee Dem Club"},
+  {name:"Tim Tung",party:"",role:"Public-finance analyst; city bond-oversight commissioner",f:["Budget auditing experience; wants to finish the zone-based assignment overhaul."],a:["SF Parents Action picked Fisher over him."],e:"GrowSF, SF Democratic Party, Ed Lee Dem Club"},
+  {name:"Alida Fisher",party:"",role:"Incumbent commissioner",f:["Parents group says she has consistently put students first."],a:["Not on GrowSF's slate."],e:"SF Parents Action"},
+  {name:"Virginia Cheung, Reina Tello, Ryan Hazelton",party:"",role:"Teachers-union slate",f:["Focus on educators, workforce readiness and social integration."],a:["Reform-minded groups favor the other slate on accountability and budget."],e:"United Educators of SF, League of Pissed Off Voters; Green Party (Cheung)"},
+  {name:"Laurance Lee",party:"",role:"Candidate",f:[""],a:[""],e:"None found"}],
+ lens:{taxes:"The district's budget health affects future school parcel taxes and bonds."},
+ sources:[["Mission Local: dueling slates","https://missionlocal.org/2026/09/san-francisco-school-board-race-dueling-slates/"],["GrowSF: Board of Ed","https://growsf.org/voter-guide/san-francisco-voter-guide-november-2026-election/contests/board-of-education/"],S.league,S.edlee]},
+
+{id:"college-board", group:"Local offices", code:"CCSF", kind:"race", title:"Community College Board (vote for 3, plus a partial term)",
+ short:"City College regained full accreditation but faces a structural deficit. Ruth Ferguson is unopposed for the partial term.", meta:["4-year terms"],
+ cands:[
+  {name:"Elijah Ball, Monroe Lace, Erwin Tam",party:"",role:"Campus planning; SFUSD-pipeline focus; municipal finance",f:["Bring facilities, governance and finance expertise to a deficit-strapped college."],a:["Progressive guide backs a different slate."],e:"GrowSF, SF Chronicle, Ed Lee Dem Club"},
+  {name:"Leah LaCroix, Bunny McFadden",party:"",role:"Progressive slate",f:["Pitched as protecting City College for future generations."],a:["Fiscal-reform groups prefer the other slate."],e:"League of Pissed Off Voters"},
+  {name:"Lisa Wynn II, Rome Moses Jones, Jeremy Lee",party:"",role:"Other candidates",f:[""],a:[""],e:"None found"}],
+ lens:{taxes:"City College has relied on local parcel taxes."},
+ sources:[S.growsf,["SF Chronicle local endorsements","https://www.sfchronicle.com/opinion/editorials/article/endorsements-san-francisco-election-22490134.php"],S.league]},
+
+{id:"bart", group:"Local offices", code:"BART8", kind:"race", title:"BART Board, District 8",
+ short:"Only Sara Barz is listed.", meta:["4-year term"],
+ cands:[{name:"Sara Barz",party:"",role:"Transit payments and regional coordination background",f:["GrowSF: her background fits the job, especially if RTM fails."],a:["Unopposed."],e:"GrowSF, Ed Lee Dem Club"}],
+ lens:{transit:"BART governance during a funding crisis."}, sources:[S.growsf,S.edlee]},
+
+{id:"assessor", group:"Local offices", code:"Assr", kind:"race", title:"Assessor-Recorder",
+ short:"Unopposed. The Assessor values your property for property-tax purposes.", meta:["4-year term"],
+ cands:[{name:"Joaquín Torres",party:"",role:"Incumbent",f:["Completed a major technology replacement; made recorded documents free online."],a:["Unopposed."],e:"GrowSF, Ed Lee Dem Club, League of Pissed Off Voters"}],
+ lens:{home:"Sets the assessed value on your home.",taxes:"Property-tax assessments."}, sources:[S.growsf,S.league]},
+
+{id:"pd", group:"Local offices", code:"PD", kind:"race", title:"Public Defender",
+ short:"Unopposed.", meta:["4-year term"],
+ cands:[{name:"Mano Raju",party:"",role:"Incumbent",f:["Supporters back his defense of indigent clients."],a:["GrowSF gives only a 'weak' endorsement: the office has refused cases and been held in contempt, and could save about $1M by dropping lobbying and political activity. Ed Lee Dem Club made no endorsement."],e:"GrowSF (weak), League of Pissed Off Voters"}],
+ lens:{safety:"Part of the criminal-justice system."}, sources:[S.growsf,S.league,S.edlee]},
+
+{id:"judges", group:"Judicial retention", code:"Courts", kind:"race", title:"Supreme Court and Court of Appeal retention",
+ short:"Yes/No votes on whether to keep justices. Supreme Court: Kelli Evans, Joshua Groban. First District Court of Appeal: Smiley, Banke, Langhorne Wilson, Stewart, Desautels, Petrou, Rodriguez, Brown, Simons, Chou, Burns.", meta:["12-year terms"],
+ cands:[{name:"All listed justices",party:"",role:"Retention elections",f:["Both GrowSF and the League of Pissed Off Voters list or recommend retaining all of them."],a:["No organized campaign against any justice was found in the sources reviewed."],e:"GrowSF, League of Pissed Off Voters"}],
+ lens:{}, sources:[S.certList,S.growsf,S.league]}
+];
+
+/* ---------- State ---------- */
+const store = {
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+let names = store.get("sfb-names",["Me","My fiancé"]);
+let picks = store.get("sfb-picks",{}); // {itemId:[pick0,pick1]}
+let lens = null;
+const LENS_LABEL = {taxes:"Taxes",safety:"Public safety",downtown:"Downtown recovery",transit:"Transit",home:"Homeowners"};
+
+/* ---------- Helpers ---------- */
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const groups = [...new Set(ITEMS.map(i=>i.group))];
+function pickLabel(it,p){ if(!p) return ""; if(it.kind==="measure") return POS[p]||p; return p; }
+
+function renderRail(){
+  const rail=document.getElementById("rail"); const sel=document.getElementById("jump");
+  let h="", o='<option value="overview">Start here</option><option value="matrix">Endorsement grid</option><option value="our-ballot">Our ballot</option>';
+  groups.forEach(g=>{
+    h+=`<h4>${esc(g)}</h4>`; o+=`<optgroup label="${esc(g)}">`;
+    ITEMS.filter(i=>i.group===g).forEach(i=>{
+      const dim = lens && !(i.lens && i.lens[lens]);
+      const p = (picks[i.id]||[])[0];
+      let pk="";
+      if(p && i.kind==="measure") pk=`<span class="pick pos ${p}">${p==="Y"?"Y":p==="N"?"N":"?"}</span>`;
+      else if(p) pk=`<span class="pick pos U">✓</span>`;
+      h+=`<a href="#${i.id}" data-id="${i.id}" class="${dim?"dim":""}"><span class="code">${esc(i.code)}</span><span>${esc(i.title)}</span>${pk}</a>`;
+      o+=`<option value="${i.id}">${esc(i.code)} · ${esc(i.title)}</option>`;
+    });
+    o+="</optgroup>";
+  });
+  rail.innerHTML=h; sel.innerHTML=o;
+}
+
+function endorseHTML(it){
+  const keys = it.st ? ["growsf","spur","edlee","league","chron","sfdem"] : ["growsf","chron","spur","sfdem","edlee","league","sfgop"];
+  return `<div class="endorse">${keys.filter(k=>it.st? it.endorse[k]!==undefined : true).map(k=>{
+    const v=it.endorse[k]||"U"; return `<div class="org"><span class="n">${ORGS[k].n}</span><span class="l">${ORGS[k].l}</span><span class="pos ${v}">${POS[v]}</span></div>`}).join("")}</div>`;
+}
+function lensHTML(it){
+  const ks=Object.keys(it.lens||{}); if(!ks.length) return "";
+  return `<div class="section lens"><h3 style="font-size:1rem;margin-bottom:8px">How it touches your priorities</h3><dl>${ks.map(k=>`<dt>${LENS_LABEL[k]}</dt><dd>${esc(it.lens[k])}</dd>`).join("")}</dl><p class="note" style="margin:10px 0 0">Factual connections only, not a recommendation.</p></div>`;
+}
+function sourcesHTML(it){
+  return `<div class="section sources"><h3 style="font-size:1rem">Sources</h3><ul class="clean">${it.sources.map(s=>`<li><a href="${esc(s[1])}" target="_blank" rel="noopener">${esc(s[0])}</a></li>`).join("")}</ul></div>`;
+}
+function oursHTML(it){
+  const cur=picks[it.id]||["",""];
+  if(it.kind==="measure"){
+    return `<div class="card section"><div class="kicker" style="margin-bottom:8px">Our call</div><div class="ours">${[0,1].map(n=>`<div class="person"><b>${esc(names[n])}</b><span class="seg" role="group" aria-label="${esc(names[n])}'s vote">${["Y","N","O"].map(v=>`<button class="${v}" data-item="${it.id}" data-person="${n}" data-val="${v}" aria-pressed="${cur[n]===v}">${v==="Y"?"Yes":v==="N"?"No":"Unsure"}</button>`).join("")}</span></div>`).join("")}</div></div>`;
+  }
+  const opts=it.cands.map(c=>c.name).filter(n=>!/^Others?$|^Other candidates$|^All listed/.test(n));
+  return `<div class="card section"><div class="kicker" style="margin-bottom:8px">Our pick</div><div class="ours">${[0,1].map(n=>`<div class="person"><label for="sel-${it.id}-${n}"><b>${esc(names[n])}</b></label><select id="sel-${it.id}-${n}" data-item="${it.id}" data-person="${n}"><option value="">Undecided</option>${opts.map(o=>`<option ${cur[n]===o?"selected":""}>${esc(o)}</option>`).join("")}<option ${cur[n]==="Other / write-in"?"selected":""}>Other / write-in</option><option ${cur[n]==="Skip"?"selected":""}>Skip</option></select></div>`).join("")}</div></div>`;
+}
+function pager(it){
+  const i=ITEMS.indexOf(it), p=ITEMS[i-1], n=ITEMS[i+1];
+  return `<div class="pager">${p?`<a href="#${p.id}">← ${esc(p.code)} ${esc(p.title)}</a>`:"<span></span>"}${n?`<a href="#${n.id}">${esc(n.code)} ${esc(n.title)} →</a>`:"<span></span>"}</div>`;
+}
+
+function renderMeasure(it){
+  return `<div class="kicker">${esc(it.group)}</div>
+  <div class="item-head"><h2>${esc(it.title)}</h2><div class="badge">${it.st?"Prop ":"Prop "}${esc(it.code)}</div></div>
+  <p class="short">${esc(it.short)}</p>
+  <div class="meta">${it.meta.map(m=>`<span>${esc(m)}</span>`).join("")}</div>
+  ${oursHTML(it)}
+  <div class="section"><h3>What it does</h3><ul class="clean">${it.what.map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>
+  <div class="section yn"><div><b>A Yes vote means</b>${esc(it.yes)}</div><div><b>A No vote means</b>${esc(it.no)}</div></div>
+  <div class="section grid2"><div class="card pro"><h3>Arguments for</h3><ul class="clean">${it.pros.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div><div class="card con"><h3>Arguments against</h3><ul class="clean">${it.cons.map(p=>`<li>${esc(p)}</li>`).join("")}</ul></div></div>
+  ${lensHTML(it)}
+  <div class="section"><h3>Who recommends what</h3>${endorseHTML(it)}
+  ${(it.supporters||it.opponents)?`<div class="who section"><div><b>Other notable supporters</b><p>${esc(it.supporters||"—")}</p></div><div><b>Other notable opponents</b><p>${esc(it.opponents||"—")}</p></div></div>`:""}
+  <p class="note">"Not found" means we couldn't confirm that group's position in published sources by Nov 2.</p></div>
+  ${sourcesHTML(it)}${pager(it)}`;
+}
+function renderRace(it){
+  return `<div class="kicker">${esc(it.group)}</div>
+  <div class="item-head"><h2>${esc(it.title)}</h2><div class="badge">${esc(it.code)}</div></div>
+  <p class="short">${esc(it.short)}</p>
+  <div class="meta">${it.meta.map(m=>`<span>${esc(m)}</span>`).join("")}</div>
+  ${oursHTML(it)}
+  <div class="cands section">${it.cands.map(c=>`<div class="card cand"><h3>${esc(c.name)}</h3><div class="role">${esc([c.party,c.role].filter(Boolean).join(" · "))}</div>
+   ${c.f.filter(Boolean).length?`<h4 class="f">What supporters say</h4><ul class="clean">${c.f.filter(Boolean).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
+   ${c.a.filter(Boolean).length?`<h4 class="a">What critics say</h4><ul class="clean">${c.a.filter(Boolean).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
+   <div class="endorsers"><b>Endorsed by:</b> ${esc(c.e)}</div></div>`).join("")}</div>
+  ${lensHTML(it)}${sourcesHTML(it)}${pager(it)}`;
+}
+
+function renderOverview(){
+  const shown = lens ? ITEMS.filter(i=>i.lens&&i.lens[lens]) : null;
+  return `<div class="prose">
+  <div class="kicker">Start here</div><h2 style="font-size:2.2rem;margin:4px 0 14px">What's on a San Francisco ballot on November 3</h2>
+  <p>San Francisco voters face <b>11 local measures</b> (Props A–J plus regional Prop RTM), <b>14 state propositions</b>, and a long list of candidate races, from governor to Board of Education. Pick any item on the left. Each page lays out what it does, the strongest arguments on each side, how it connects to the priorities you named (taxes, public safety, downtown recovery, transit, and being homeowners), and who recommends what.</p>
+  <p><b>About balance.</b> The arguments come mainly from the League of Women Voters, which is nonpartisan and makes no recommendations, plus the official ballot arguments and news coverage. Endorsements come from groups across the spectrum: GrowSF (moderate, pro-growth), SPUR (urban policy), the Chronicle editorial board, the Ed Lee Democratic Club (moderate), the SF Democratic Party, the League of Pissed Off Voters (progressive), and the SF Republican Party where its positions were published. GrowSF is an advocacy group with its own agenda, so its picks appear alongside the others, not as a neutral source.</p>
+  <p><b>Your ballot may differ.</b> Supervisor races appear only in Districts 2, 4, 6, 8 and 10. You'll see either CA-11 or CA-15 for Congress and either Assembly District 17 or 19, depending on your address. Check your sample ballot at <a href="https://sfelections.org" target="_blank" rel="noopener">sfelections.org</a>.</p>
+  <p><b>Use it together.</b> Each page has an "Our call" row for both of you. Your choices stay in this browser only, so fill it in on one device. The <a href="#our-ballot">Our ballot</a> tab shows where you agree and disagree and lets you copy the list.</p>
+  <div class="names card" style="margin:16px 0"><span class="kicker">Your names</span><label for="n0" class="note">Person 1</label><input id="n0" value="${esc(names[0])}"><label for="n1" class="note">Person 2</label><input id="n1" value="${esc(names[1])}"></div>
+  <h3 style="font-size:1.3rem;margin:26px 0 10px">${lens?`Items that touch ${LENS_LABEL[lens].toLowerCase()} (${shown.length})`:"Where your priorities pull in different directions"}</h3>
+  ${lens? `<ul class="clean">${shown.map(i=>`<li><a href="#${i.id}"><b>${esc(i.code)}</b> ${esc(i.title)}</a>: ${esc(i.lens[lens])}</li>`).join("")}</ul>`
+  : `<ul class="clean">
+    <li><b>Taxes vs. transit.</b> <a href="#prop-h">Prop H</a> ($129/yr per typical home) and <a href="#prop-rtm">RTM</a> (+1 point on the SF sales tax) are new taxes and also the main money keeping Muni and BART from deep cuts. SFMTA's budget plan counts on both.</li>
+    <li><b>Taxes, the long view.</b> <a href="#prop-43">Prop 43</a> would require two-thirds approval for future local special taxes like H. <a href="#prop-41">41</a> and <a href="#prop-42">42</a> limit new state taxes and would cancel the <a href="#prop-40">billionaire tax</a> if they outpoll it.</li>
+    <li><b>Public safety and City Hall.</b> <a href="#prop-f">Prop F</a> moves power over the Police Chief from the Police Commission to the mayor. D, E and F together are Mayor Lurie's charter overhaul.</li>
+    <li><b>Downtown.</b> <a href="#prop-j">Prop J</a> taxes lenders who take over large foreclosed buildings; <a href="#prop-i">Prop I</a> redirects high-end transfer-tax revenue to housing.</li>
+    <li><b>Homeowners.</b> The <a href="#insurance">Insurance Commissioner</a> race is a clear choice between fixing the private home-insurance market and creating a state-run disaster insurer.</li>
+  </ul>`}
+  <p class="note" style="margin-top:22px">Compiled November 2, 2026. Figures are from the sources linked on each page; the official voter guides from the city and the Secretary of State are the final word. This page doesn't tell you how to vote.</p>
+  </div>`;
+}
+
+function renderMatrix(){
+  const cols=["growsf","chron","spur","sfdem","edlee","league","sfgop"];
+  let rows="";
+  groups.filter(g=>/measures?|propositions/i.test(g)).forEach(g=>{
+    rows+=`<tr class="grp"><td colspan="${cols.length+2}">${esc(g)}</td></tr>`;
+    ITEMS.filter(i=>i.group===g).forEach(i=>{
+      const p=(picks[i.id]||[]);
+      rows+=`<tr><td><a href="#${i.id}">${esc(i.code)}</a></td><td>${esc(i.title)}</td>${cols.map(c=>{const v=i.endorse[c]; return `<td class="c">${v&&v!=="U"?`<span class="pos ${v}">${v==="O"?"—":POS[v]}</span>`:'<span class="note">·</span>'}</td>`}).join("")}</tr>`;
+    });
+  });
+  return `<div class="kicker">Endorsement grid</div><h2 style="font-size:2rem;margin:4px 0 8px">Who recommends what, at a glance</h2>
+  <p class="note prose">"—" means the group took no position; "·" means we couldn't find one. Columns run roughly from moderate/business-friendly on the left to progressive, with the SF Republican Party at the end. Candidate endorsements are on each race's page.</p>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>#</th><th>Measure</th>${cols.map(c=>`<th>${ORGS[c].n}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function ballotText(){
+  let t="Our ballot, Nov 3 2026\n";
+  groups.forEach(g=>{
+    t+=`\n${g}\n`;
+    ITEMS.filter(i=>i.group===g).forEach(i=>{
+      const p=picks[i.id]||["",""];
+      t+=`  ${i.code} ${i.title}: ${names[0]}: ${pickLabel(i,p[0])||"—"} | ${names[1]}: ${pickLabel(i,p[1])||"—"}\n`;
+    });
+  });
+  return t;
+}
+function renderOurs(){
+  let rows="", agree=0, dis=0, open=0;
+  groups.forEach(g=>{
+    rows+=`<tr class="grp"><td colspan="4">${esc(g)}</td></tr>`;
+    ITEMS.filter(i=>i.group===g).forEach(i=>{
+      const p=picks[i.id]||["",""];
+      const d = p[0]&&p[1]&&p[0]!==p[1];
+      if(!p[0]||!p[1]) open++; else if(d) dis++; else agree++;
+      const cell=v=> i.kind==="measure"? (v?`<span class="pos ${v}">${POS[v]==="No position"?"Unsure":POS[v]}</span>`:'<span class="note">—</span>') : (v?esc(v):'<span class="note">—</span>');
+      rows+=`<tr class="${d?"disagree":""}"><td><a href="#${i.id}">${esc(i.code)}</a></td><td>${esc(i.title)}</td><td>${cell(p[0])}</td><td>${cell(p[1])}</td></tr>`;
+    });
+  });
+  return `<div class="kicker">Our ballot</div><h2 style="font-size:2rem;margin:4px 0 8px">Where the two of you landed</h2>
+  <p class="prose">${agree} agreed · <b>${dis} to talk through</b> (highlighted) · ${open} still open. Choices are saved in this browser only.</p>
+  <p><button class="btn" id="copy">Copy as text</button> <button class="btn ghost" id="clear">Clear all choices</button> <span id="copymsg" class="note" role="status"></span></p>
+  <div class="tablewrap"><table class="matrix"><thead><tr><th>#</th><th>Item</th><th>${esc(names[0])}</th><th>${esc(names[1])}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+/* ---------- Router ---------- */
+function route(){
+  const id=(location.hash||"#overview").slice(1);
+  const main=document.getElementById("main");
+  const it=ITEMS.find(i=>i.id===id);
+  if(it) main.innerHTML = it.kind==="measure"? renderMeasure(it): renderRace(it);
+  else if(id==="matrix") main.innerHTML=renderMatrix();
+  else if(id==="our-ballot") main.innerHTML=renderOurs();
+  else main.innerHTML=renderOverview();
+  document.querySelectorAll(".rail a").forEach(a=>a.classList.toggle("on",a.dataset.id===id));
+  ["overview","matrix","our-ballot"].forEach(t=>document.getElementById("tab-"+t).classList.toggle("on", t===id || (t==="overview" && !it && id!=="matrix" && id!=="our-ballot")));
+  const sel=document.getElementById("jump"); if(sel) sel.value = it||id==="matrix"||id==="our-ballot"? id : "overview";
+  window.scrollTo(0,0);
+}
+
+/* ---------- Events ---------- */
+document.addEventListener("click",e=>{
+  const b=e.target.closest(".seg button");
+  if(b){ const {item,person,val}=b.dataset; const cur=picks[item]||["",""]; cur[+person]= cur[+person]===val?"":val; picks[item]=cur; store.set("sfb-picks",picks); route(); renderRail(); markRail(); return; }
+  const c=e.target.closest(".chip");
+  if(c){ const l=c.dataset.lens; lens = lens===l?null:l; document.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed", x.dataset.lens===lens)); renderRail(); markRail(); if(!ITEMS.find(i=>i.id===(location.hash||"").slice(1))) route(); return; }
+  if(e.target.id==="copy"){ const msg=document.getElementById("copymsg"); navigator.clipboard.writeText(ballotText()).then(()=>msg.textContent="Copied.").catch(()=>msg.textContent="Copy was blocked by the browser; select the table and copy it instead."); return; }
+  if(e.target.id==="clear"){ const btn=e.target; if(btn.dataset.armed){ picks={}; store.set("sfb-picks",picks); route(); renderRail(); } else { btn.dataset.armed="1"; btn.textContent="Click again to clear everything"; } }
+});
+document.addEventListener("change",e=>{
+  const s=e.target;
+  if(s.matches("select[data-item]")){ const cur=picks[s.dataset.item]||["",""]; cur[+s.dataset.person]=s.value; picks[s.dataset.item]=cur; store.set("sfb-picks",picks); renderRail(); markRail(); }
+  if(s.id==="jump"){ location.hash=s.value; }
+});
+document.addEventListener("input",e=>{
+  if(e.target.id==="n0"||e.target.id==="n1"){ names[e.target.id==="n0"?0:1]=e.target.value||("Person "+(e.target.id==="n0"?1:2)); store.set("sfb-names",names); }
+});
+function markRail(){ const id=(location.hash||"").slice(1); document.querySelectorAll(".rail a").forEach(a=>a.classList.toggle("on",a.dataset.id===id)); }
+window.addEventListener("hashchange",route);
+renderRail(); route();
+</script>
+</body>
+</html>
