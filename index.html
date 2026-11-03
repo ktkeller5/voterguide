@@ -792,8 +792,9 @@ const store = {
   get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 };
-let names = store.get("sfb-names",["insert name","insert name"]);
-let picks = store.get("sfb-picks",{}); // {itemId:[pick0,pick1]}
+const DEFAULT_PICKS = {"prop-a":["Y",""],"prop-b":["N",""],"prop-c":["Y",""],"prop-d":["Y",""],"prop-e":["Y",""],"prop-f":["Y",""],"prop-g":["N",""],"prop-h":["Y",""],"prop-i":["N",""],"prop-j":["N",""],"prop-rtm":["N",""],"prop-1":["Y",""],"prop-2":["Y",""],"prop-3":["N",""],"prop-4":["N",""],"prop-5":["Y",""],"prop-37":["Y",""],"prop-38":["N",""],"prop-39":["N",""],"prop-40":["N",""],"prop-41":["Y",""],"prop-42":["Y",""],"prop-43":["Y",""],"prop-44":["N",""],"prop-45":["Y",""],"cd-11":["Scott Wiener",""],"gov":["Xavier Becerra",""],"ltgov":["Fiona Ma",""],"ag":["Rob Bonta",""],"sos":["Shirley N. Weber",""],"controller":["Malia Cohen",""],"treasurer":["Eleni Kounalakis",""],"insurance":["Ben Allen",""],"spi":["Richard Barrera",""],"boe":["John Pimentel",""],"ad-19":["Catherine Stefani",""],"d8":["Darshini Patel",""],"college-board":["Elijah Ball, Monroe Lace, Erwin Tam",""],"bart":["Sara Barz",""],"assessor":["Joaquín Torres",""],"pd":["Mano Raju",""]};
+let names = store.get("sfb-names2",["Katie","Ionel"]);
+let picks = Object.assign({}, DEFAULT_PICKS, store.get("sfb-picks2",{})); // {itemId:[pick0,pick1]}
 let lens = null;
 const LENS_LABEL = {taxes:"Taxes",safety:"Public safety",downtown:"Downtown recovery",transit:"Transit",home:"Homeowners"};
 
@@ -942,35 +943,36 @@ function renderOurs(){
 
 /* ---------- Router ---------- */
 function route(){
-  const id=(location.hash||"#overview").slice(1);
+  const id=(location.hash||"#our-ballot").slice(1);
   const main=document.getElementById("main");
   const it=ITEMS.find(i=>i.id===id);
   if(it) main.innerHTML = it.kind==="measure"? renderMeasure(it): renderRace(it);
   else if(id==="matrix") main.innerHTML=renderMatrix();
   else if(id==="our-ballot") main.innerHTML=renderOurs();
-  else main.innerHTML=renderOverview();
+  else if(id==="overview") main.innerHTML=renderOverview();
+  else main.innerHTML=renderOurs();
   document.querySelectorAll(".rail a").forEach(a=>a.classList.toggle("on",a.dataset.id===id));
-  ["overview","matrix","our-ballot"].forEach(t=>document.getElementById("tab-"+t).classList.toggle("on", t===id || (t==="overview" && !it && id!=="matrix" && id!=="our-ballot")));
-  const sel=document.getElementById("jump"); if(sel) sel.value = it||id==="matrix"||id==="our-ballot"? id : "overview";
+  ["overview","matrix","our-ballot"].forEach(t=>document.getElementById("tab-"+t).classList.toggle("on", t===id));
+  const sel=document.getElementById("jump"); if(sel) sel.value = it||id==="matrix"||id==="our-ballot"||id==="overview"? id : "our-ballot";
   window.scrollTo(0,0);
 }
 
 /* ---------- Events ---------- */
 document.addEventListener("click",e=>{
   const b=e.target.closest(".seg button");
-  if(b){ const {item,person,val}=b.dataset; const cur=picks[item]||["",""]; cur[+person]= cur[+person]===val?"":val; picks[item]=cur; store.set("sfb-picks",picks); route(); renderRail(); markRail(); return; }
+  if(b){ const {item,person,val}=b.dataset; const cur=picks[item]||["",""]; cur[+person]= cur[+person]===val?"":val; picks[item]=cur; store.set("sfb-picks2",picks); route(); renderRail(); markRail(); return; }
   const c=e.target.closest(".chip");
   if(c){ const l=c.dataset.lens; lens = lens===l?null:l; document.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed", x.dataset.lens===lens)); renderRail(); markRail(); if(!ITEMS.find(i=>i.id===(location.hash||"").slice(1))) route(); return; }
   if(e.target.id==="copy"){ const msg=document.getElementById("copymsg"); navigator.clipboard.writeText(ballotText()).then(()=>msg.textContent="Copied.").catch(()=>msg.textContent="Copy was blocked by the browser; select the table and copy it instead."); return; }
-  if(e.target.id==="clear"){ const btn=e.target; if(btn.dataset.armed){ picks={}; store.set("sfb-picks",picks); route(); renderRail(); } else { btn.dataset.armed="1"; btn.textContent="Click again to clear everything"; } }
+  if(e.target.id==="clear"){ const btn=e.target; if(btn.dataset.armed){ picks={}; store.set("sfb-picks2",picks); route(); renderRail(); } else { btn.dataset.armed="1"; btn.textContent="Click again to clear everything"; } }
 });
 document.addEventListener("change",e=>{
   const s=e.target;
-  if(s.matches("select[data-item]")){ const cur=picks[s.dataset.item]||["",""]; cur[+s.dataset.person]=s.value; picks[s.dataset.item]=cur; store.set("sfb-picks",picks); renderRail(); markRail(); }
+  if(s.matches("select[data-item]")){ const cur=picks[s.dataset.item]||["",""]; cur[+s.dataset.person]=s.value; picks[s.dataset.item]=cur; store.set("sfb-picks2",picks); renderRail(); markRail(); }
   if(s.id==="jump"){ location.hash=s.value; }
 });
 document.addEventListener("input",e=>{
-  if(e.target.id==="n0"||e.target.id==="n1"){ names[e.target.id==="n0"?0:1]=e.target.value||("Person "+(e.target.id==="n0"?1:2)); store.set("sfb-names",names); }
+  if(e.target.id==="n0"||e.target.id==="n1"){ names[e.target.id==="n0"?0:1]=e.target.value||("Person "+(e.target.id==="n0"?1:2)); store.set("sfb-names2",names); }
 });
 function markRail(){ const id=(location.hash||"").slice(1); document.querySelectorAll(".rail a").forEach(a=>a.classList.toggle("on",a.dataset.id===id)); }
 window.addEventListener("hashchange",route);
